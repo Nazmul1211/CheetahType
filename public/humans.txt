@@ -1,0 +1,12 @@
+/* TEAM */
+	Developer: CheetahType Team
+	Contact: hello@cheetahtype.com
+	Twitter: @cheetahtype
+	From: Global
+
+/* SITE */
+	Last update: 2024/06/11
+	Language: English
+	Doctype: HTML5
+	IDE: Visual Studio Code
+	Stack: Next.js, React, TypeScript, Tailwind CSS 

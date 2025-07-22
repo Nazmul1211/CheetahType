@@ -1,0 +1,7 @@
+# Security Policy for CheetahType
+Contact: mailto:security@cheetahtype.com
+Expires: 2025-06-11T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://cheetahtype.com/.well-known/security.txt
+Policy: https://cheetahtype.com/security
+Hiring: https://cheetahtype.com/careers 

@@ -1,0 +1,13 @@
+# CheetahType - A Modern Typing Test Application
+# https://cheetahtype.com
+
+# Allow all web crawlers
+User-agent: *
+Allow: /
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://cheetahtype.com/sitemap.xml 
