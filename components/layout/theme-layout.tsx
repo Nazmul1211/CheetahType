@@ -113,22 +113,22 @@ export function ThemeLayout({ children }: ThemeLayoutProps) {
           </p>
           <div className="flex items-center space-x-4">
             <a 
-              href="/about/" 
+              href="/about-us/" 
               className={`px-2 py-1 text-sm ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              About
+              About us
             </a>
             <a 
-              href="/terms/" 
+              href="/terms-of-service/" 
               className={`px-2 py-1 text-sm ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              Terms
+              Terms of Service
             </a>
             <a 
-              href="/privacy/" 
+              href="/privacy-policy/" 
               className={`px-2 py-1 text-sm ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              Privacy
+              Privacy policy
             </a>
             <a 
               href="/support/" 

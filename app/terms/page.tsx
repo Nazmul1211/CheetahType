@@ -1,11 +1,16 @@
+"use client";
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function TermsPage() {
+  const { resolvedTheme } = useTheme();
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="w-full p-4 flex items-center border-b border-border">
-        <Link href="/" className="flex items-center gap-2 text-foreground hover:text-yellow-500 transition-colors">
+        <Link href="/" className="flex items-center gap-2 hover:text-yellow-500 transition-colors">
           <ArrowLeft className="h-4 w-4" />
           <span>Back to CheetahType</span>
         </Link>
@@ -53,7 +58,7 @@ export default function TermsPage() {
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">6. Disclaimer of Warranties</h2>
           <p className="mb-4">
-            CheetahType is provided "as is" without warranties of any kind, whether express or implied.
+            CheetahType is provided &quot;as is&quot; without warranties of any kind, whether express or implied.
           </p>
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">7. Limitation of Liability</h2>
@@ -74,10 +79,6 @@ export default function TermsPage() {
           </p>
         </div>
       </main>
-      
-      <footer className="w-full p-4 text-center text-sm text-muted-foreground border-t border-border">
-        <p>&copy; {new Date().getFullYear()} CheetahType. All rights reserved.</p>
-      </footer>
     </div>
   );
 } 

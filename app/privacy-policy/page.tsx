@@ -1,11 +1,17 @@
+"use client";
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function PrivacyPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="w-full p-4 flex items-center justify-center border-b border-border">
-        <Link href="/" className="flex items-center gap-2 text-foreground hover:text-yellow-500 transition-colors">
+        <Link href="/" className="flex items-center gap-2 hover:text-yellow-500 transition-colors">
           <ArrowLeft className="h-4 w-4" />
           <span>Back to CheetahType</span>
         </Link>
@@ -90,10 +96,6 @@ export default function PrivacyPage() {
           </p>
         </div>
       </main>
-      
-      <footer className="w-full p-4 text-center text-sm text-muted-foreground border-t border-border">
-        <p>&copy; {new Date().getFullYear()} CheetahType. All rights reserved.</p>
-      </footer>
     </div>
   );
 } 

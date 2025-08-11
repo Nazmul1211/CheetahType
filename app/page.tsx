@@ -142,10 +142,10 @@ export default function Home() {
       
       <div className="w-full max-w-7xl mx-auto">
         {/* Add semantic HTML5 elements for better SEO */}
-        <header className="sr-only">
+        {/* <header className="sr-only">
           <h1>CheetahType - A Modern Typing Test</h1>
           <p>Improve your typing speed and accuracy with this free online typing test application</p>
-        </header>
+        </header> */}
         
         <section aria-label="Typing Test">
           <TypingTest 
@@ -162,7 +162,7 @@ export default function Home() {
         </section>
         
         {/* Statistics Section */}
-        <section aria-label="Statistics" className="mt-8 mb-4">
+        {/* <section aria-label="Statistics" className="mt-8 mb-4">
           <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
             CheetahType Statistics
           </h2>
@@ -224,50 +224,92 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
-        </section>
+        </section> */}
         
         {/* FAQ Section for AEO */}
-        <section aria-label="Frequently Asked Questions" className="mt-12 mb-8">
-          <h2 className={`text-xl font-bold mb-6 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+        <section aria-label="Frequently Asked Questions" className="max-w-xl mx-auto mt-12 mb-8">
+          <h2 className={`text-xl md:text-2xl font-bold mb-6 text-center ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
             Frequently Asked Questions
           </h2>
           
-          <Accordion type="single" collapsible className={isDark ? 'text-slate-200' : 'text-slate-800'}>
-            <AccordionItem value="item-1">
-              <AccordionTrigger className="text-left">What is CheetahType?</AccordionTrigger>
-              <AccordionContent>
-                CheetahType is a free, modern typing test application designed to help users improve their typing speed and accuracy. It offers multiple test modes, detailed statistics, and multiplayer features.
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="item-2">
-              <AccordionTrigger className="text-left">How is WPM (Words Per Minute) calculated?</AccordionTrigger>
-              <AccordionContent>
-                WPM is calculated by dividing the number of characters typed (including spaces) by 5, and then dividing that result by the time taken in minutes. This is the standard method used by most typing tests.
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="item-3">
-              <AccordionTrigger className="text-left">How can I improve my typing speed?</AccordionTrigger>
-              <AccordionContent>
-                To improve your typing speed, practice regularly with proper finger positioning, focus on accuracy before speed, learn touch typing, use keyboard shortcuts, and take regular typing tests to track your progress.
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="item-4">
-              <AccordionTrigger className="text-left">What test modes are available on CheetahType?</AccordionTrigger>
-              <AccordionContent>
-                CheetahType offers several test modes including timed tests (15, 30, 60, and 120 seconds), word count tests (10, 25, 50, and 100 words), and custom text mode where you can practice with your own content.
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="item-5">
-              <AccordionTrigger className="text-left">Is CheetahType free to use?</AccordionTrigger>
-              <AccordionContent>
-                Yes, CheetahType is completely free to use. All features including typing tests, statistics tracking, and multiplayer races are available at no cost.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          <div className={`rounded-lg overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-800/30' : 'border-slate-200 bg-white/60'}`}>
+            <Accordion type="single" collapsible className={isDark ? 'text-slate-200' : 'text-slate-800'}>
+              <AccordionItem value="item-1" className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <AccordionTrigger className="text-left px-4 py-3 hover:no-underline data-[state=open]:bg-teal-900/20">
+                  <div className="flex items-center">
+                    <span className={`text-base font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      What is CheetahType?
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className={`px-4 py-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                  <p className="leading-relaxed">
+                    CheetahType is a free, modern & customizable typing test application designed to help users improve their typing speed and accuracy. It offers multiple test modes, detailed statistics, and multiplayer features.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="item-2" className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <AccordionTrigger className="text-left px-4 py-3 hover:no-underline data-[state=open]:bg-teal-900/20">
+                  <div className="flex items-center">
+                    <span className={`text-base font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      How is WPM (Words Per Minute) calculated?
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className={`px-4 py-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                  <p className="leading-relaxed">
+                    WPM is calculated by dividing the number of characters typed (including spaces) by 5, and then dividing that result by the time taken in minutes. This is the standard method used by most typing tests.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="item-3" className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <AccordionTrigger className="text-left px-4 py-3 hover:no-underline data-[state=open]:bg-teal-900/20">
+                  <div className="flex items-center">
+                    <span className={`text-base font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      How can I improve my typing speed?
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className={`px-4 py-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                  <p className="leading-relaxed">
+                    To improve your typing speed, practice regularly with proper finger positioning, focus on accuracy before speed, learn touch typing, use keyboard shortcuts, and take regular typing tests to track your progress.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="item-4" className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <AccordionTrigger className="text-left px-4 py-3 hover:no-underline data-[state=open]:bg-teal-900/20">
+                  <div className="flex items-center">
+                    <span className={`text-base font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      What test modes are available on CheetahType?
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className={`px-4 py-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                  <p className="leading-relaxed">
+                    Cheetah Type offers several test modes including punctuation tests, numbers tests, timed tests(15, 30, 60, and 120 seconds), word count tests(10, 25, 50, and 100 words), zen mode, and custom text mode where you can practice with your own content.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="item-5" className={`${isDark ? 'border-slate-700' : 'border-slate-200'} border-0`}>
+                <AccordionTrigger className="text-left px-4 py-3 hover:no-underline data-[state=open]:bg-teal-900/20">
+                  <div className="flex items-center">
+                    <span className={`text-base font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      Is CheetahType free to use?
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className={`px-4 py-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                  <p className="leading-relaxed">
+                    Yes, CheetahType is completely free to use. All features including typing tests, statistics tracking, and multiplayer races are available at no cost.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
         </section>
       </div>
       

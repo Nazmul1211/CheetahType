@@ -23,6 +23,8 @@ import { getFontFamilyClass, getFontSizeClass } from "@/lib/user-settings";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
+import { getAuth } from 'firebase/auth';
+import { supabaseClient } from '@/utils/supabase/client';
 
 const WPM_UPDATE_INTERVAL = 1000; // Update WPM every second
 const TEXT_BUFFER_THRESHOLD = 0.7; // Generate more text when user has typed 70% of current text
@@ -43,7 +45,8 @@ interface TypingTestProps {
   showKeyboard?: boolean;
   fontFamily?: "mono" | "sans" | "serif";
   fontSize?: "small" | "medium" | "large";
-  caretStyle?: "block" | "underline" | "outline";
+  caretStyle?: "block" | "underline" | "outline" | "straight";
+  caretBlink?: boolean;
   soundEnabled?: boolean;
   customText?: string;
 }
@@ -56,6 +59,7 @@ export function TypingTest({
   fontFamily = "mono",
   fontSize = "medium",
   caretStyle = "block",
+  caretBlink = false,
   soundEnabled = false,
   customText,
 }: TypingTestProps) {
@@ -81,6 +85,8 @@ export function TypingTest({
 
   // Detect mobile device for keyboard display
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -89,7 +95,19 @@ export function TypingTest({
 
   // Initialize the test
   const initTest = useCallback(() => {
-    const wordCount = testMode === "words" ? wordsOption : 1000; // Generate a large amount of text
+    // Generate more text initially to fill multiple lines
+    let wordCount = 0;
+    
+    // For each test mode, ensure we generate enough text to fill 3 lines
+    if (testMode === "words") {
+      wordCount = Math.max(wordsOption, 100);
+    } else if (testMode === "quote" || testMode === "custom") {
+      wordCount = customText ? customText.split(" ").length : 150;
+    } else {
+      // For time, zen, punctuation, numbers modes
+      wordCount = 200;
+    }
+    
     const newText = generateWords(wordCount, testMode, customText);
     setText(newText);
     setUserInput("");
@@ -128,7 +146,7 @@ export function TypingTest({
   }, [startTime, isActive, userInput, text]);
 
   // End the test
-  const endTest = useCallback(() => {
+  const endTest = useCallback(async () => {
     console.log("endTest called, isActive:", isActive);
 
     if (!isActive) return;
@@ -188,6 +206,29 @@ export function TypingTest({
     // Force immediate state update for the stats
     console.log("Setting stats:", finalStats);
     setStats(finalStats);
+
+    // Auto-save result to Supabase if user is signed in
+    try {
+      const authInstance = getAuth();
+      const currentUser = authInstance.currentUser;
+      if (currentUser) {
+        const { error } = await supabaseClient.from('tests').insert({
+          user_id: currentUser.uid,
+          wpm: finalStats.wpm,
+          raw_wpm: Math.round(finalStats.wpm * (100 / Math.max(finalStats.accuracy, 50))),
+          accuracy: finalStats.accuracy,
+          consistency: finalStats.consistency,
+          characters: finalStats.totalChars,
+          errors: finalStats.incorrectChars,
+          duration: finalStats.elapsedTime,
+          test_type: testMode,
+          test_mode: testMode,
+        });
+        if (error) console.error('Failed to auto-save test', error);
+      }
+    } catch (e) {
+      console.error('Auto-save exception', e);
+    }
   }, [isActive, text, userInput, elapsedTime, wpmHistory]);
 
   // Update the endTestRef whenever endTest changes
@@ -295,7 +336,25 @@ export function TypingTest({
 
   // Restart the test
   const restartTest = () => {
+    // First, reset all state via initTest
     initTest();
+    
+    // Generate initial text immediately to ensure it's visible
+    let wordCount = 0;
+    
+    // For each test mode, ensure we generate enough text to fill 3 lines
+    if (testMode === "words") {
+      wordCount = Math.max(wordsOption, 100);
+    } else if (testMode === "quote" || testMode === "custom") {
+      wordCount = customText ? customText.split(" ").length : 150;
+    } else {
+      // For time, zen, punctuation, numbers modes
+      wordCount = 200;
+    }
+    
+    const newText = generateWords(wordCount, testMode, customText);
+    setText(newText);
+    
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -428,9 +487,10 @@ export function TypingTest({
       >
         <div className="w-full max-w-7xl">
           <div
-            className={`container py-[2px] max-w-7xl flex h-10 items-center text-center justify-between rounded-lg bg-slate-800/30 p-0.5 typing-options transition-all ${
-              isFinished ? "opacity-0" : "opacity-100"
-            }`}
+            className={""}
+            // `container py-[2px] max-w-7xl flex h-10 items-center text-center justify-between rounded-lg bg-slate-800/30 p-0.5 typing-options transition-all ${
+            //   isFinished ? "opacity-0" : "opacity-100"
+            // }`
           >
             <TestControls
               testMode={testMode}
@@ -476,30 +536,55 @@ export function TypingTest({
       <div className="w-full">
         {!isFinished && (
           <div
-            className="max-w-7xl mx-auto mb-8 flex items-center justify-center relative"
+            className="max-w-7xl mx-auto flex flex-col items-center text-center justify-start"
             onClick={handleContainerClick}
           >
-            <WordDisplay
-              text={text}
-              userInput={userInput}
-              fontFamily={fontFamily}
-              fontSize="large" // Always use large font
-              caretStyleClass={getCaretStyleClass()}
-              maxLines={3}
-            />
-            <input
-              ref={inputRef}
-              type="text"
-              value={userInput}
-              onChange={handleInput}
-              onKeyDown={handleInputKeyDown}
-              className="opacity-0 absolute left-0 top-0 h-full max-w-7xl mx-auto cursor-default"
-              autoCorrect="off"
-              autoCapitalize="off"
-              autoComplete="off"
-              spellCheck="false"
-              autoFocus
-            />
+            {/* Fixed height container for the typing area */}
+            <div className="w-full flex flex-col">
+              <WordDisplay
+                text={text}
+                userInput={userInput}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
+                caretStyle={caretStyle}
+                caretBlink={caretBlink}
+                maxLines={3}
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                value={userInput}
+                onChange={handleInput}
+                onKeyDown={handleInputKeyDown}
+                className="opacity-0 absolute left-0 top-0 max-w-7xl mx-auto cursor-default"
+                autoCorrect="off"
+                autoCapitalize="off"
+                autoComplete="off"
+                spellCheck="false"
+                autoFocus
+              />
+            </div>
+            
+            {/* Fixed height container for the restart button */}
+            <div className="h-16 flex items-center justify-center mt-4">
+              {isActive && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    restartTest();
+                  }}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-colors ${
+                    isDark 
+                      ? "bg-slate-800 hover:bg-slate-700 text-slate-200" 
+                      : "bg-slate-200 hover:bg-slate-300 text-slate-700"
+                  }`}
+                  aria-label="Restart test"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="text-sm">Restart</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -515,6 +600,8 @@ export function TypingTest({
               duration={stats.elapsedTime}
               testType={testMode}
               testMode={testMode}
+              timeSeconds={testMode === 'time' ? timeOption : undefined}
+              textContent={text.substring(0, userInput.length)}
               onRestart={restartTest}
             />
           </div>
@@ -523,7 +610,7 @@ export function TypingTest({
         {showKeyboard && !isMobile && !isFinished && (
           <div
             className={cn(
-              "w-full mt-8 sticky bottom-0 left-0 right-0 z-10",
+              "w-full mt-6 sticky bottom-0 left-0 right-0 z-10",
               isActive
                 ? "opacity-100"
                 : "opacity-60 hover:opacity-100 transition-opacity"
@@ -532,6 +619,25 @@ export function TypingTest({
             <KeyboardDisplay currentKey={currentKey} />
           </div>
         )}
+
+        {/* Command line tools section - completely separate from keyboard */}
+        <div className={cn(
+          "flex flex-wrap justify-center gap-2 mt-4 mb-6 py-2 px-3 rounded-md max-w-xl mx-auto",
+        )}>
+          <div className="flex items-center text-sm">
+            <kbd className={cn("px-2 py-0.5 rounded mx-1", isDark ? "bg-slate-700" : "bg-slate-300")}>shift</kbd>
+            <span className="mx-1 text-slate-400">+</span>
+            <kbd className={cn("px-2 py-0.5 rounded mx-1", isDark ? "bg-slate-700" : "bg-slate-300")}>tab</kbd>
+            <span className="mx-2 text-slate-400">-</span>
+            <span className="text-sm text-slate-400">restart test</span>
+          </div>
+          
+          <div className="flex items-center text-sm">
+            <kbd className={cn("px-2 py-0.5 rounded mx-1", isDark ? "bg-slate-700" : "bg-slate-300")}>esc</kbd>
+            <span className="mx-2 text-slate-400">-</span>
+            <span className="text-sm text-slate-400">command line</span>
+          </div>
+        </div>
 
         {commandLineOpen && (
           <CommandLine

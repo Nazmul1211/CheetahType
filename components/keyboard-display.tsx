@@ -15,8 +15,8 @@ export function KeyboardDisplay({ currentKey }: KeyboardDisplayProps) {
     ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
     ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
     ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 'Enter'],
-    ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
-    ['Ctrl', 'Alt', 'Space', 'Alt', 'Ctrl']
+    ['ShiftLeft', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'ShiftRight'],
+    ['CtrlLeft', 'AltLeft', 'Space', 'AltRight', 'CtrlRight']
   ];
 
   const getKeyWidth = (key: string) => {
@@ -27,14 +27,17 @@ export function KeyboardDisplay({ currentKey }: KeyboardDisplayProps) {
       case 'Caps':
       case '\\':
         return 'w-12';
-      case 'Shift':
+      case 'ShiftLeft':
+      case 'ShiftRight':
         return 'w-16';
       case 'Enter':
         return 'w-14';
       case 'Space':
         return 'w-40';
-      case 'Ctrl':
-      case 'Alt':
+      case 'CtrlLeft':
+      case 'CtrlRight':
+      case 'AltLeft':
+      case 'AltRight':
         return 'w-10';
       default:
         return 'w-8';
@@ -57,14 +60,22 @@ export function KeyboardDisplay({ currentKey }: KeyboardDisplayProps) {
     // Handle other special keys
     if ((key === 'Enter' && currentKey === 'Enter') ||
         (key === 'Tab' && currentKey === 'Tab') ||
-        (key === 'Shift' && currentKey === 'Shift') ||
-        (key === 'Ctrl' && currentKey === 'Control') ||
-        (key === 'Alt' && currentKey === 'Alt')) {
+        ((key === 'ShiftLeft' || key === 'ShiftRight') && currentKey === 'Shift') ||
+        ((key === 'CtrlLeft' || key === 'CtrlRight') && currentKey === 'Control') ||
+        ((key === 'AltLeft' || key === 'AltRight') && currentKey === 'Alt')) {
       return true;
     }
     
     // Default case for regular characters
     return key.toLowerCase() === currentKey.toLowerCase();
+  };
+
+  const getKeyDisplay = (key: string) => {
+    if (key === "Space") return "␣";
+    if (key === "ShiftLeft" || key === "ShiftRight") return "Shift";
+    if (key === "CtrlLeft" || key === "CtrlRight") return "Ctrl";
+    if (key === "AltLeft" || key === "AltRight") return "Alt";
+    return key;
   };
 
   return (
@@ -87,7 +98,7 @@ export function KeyboardDisplay({ currentKey }: KeyboardDisplayProps) {
                     : "bg-slate-300/80 text-slate-800 hover:bg-slate-400/80" // Light mode inactive key
               )}
             >
-              {key === "Space" ? "␣" : key}
+              {getKeyDisplay(key)}
             </div>
           ))}
         </div>

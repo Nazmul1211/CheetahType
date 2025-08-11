@@ -16,6 +16,7 @@ import {
   User as FirebaseUser,
   Auth
 } from 'firebase/auth';
+import { supabaseClient } from '@/utils/supabase/client';
 
 // Create providers
 const googleProvider = new GoogleAuthProvider();
@@ -69,6 +70,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set up Firebase auth state listener
       const unsubscribe = onAuthStateChanged(auth as Auth, async (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
+          // Ensure user row exists/updated in Supabase
+          try {
+            const { data, error } = await supabaseClient
+              .from('users')
+              .upsert({
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                display_name: firebaseUser.displayName,
+                photo_url: firebaseUser.photoURL,
+                email_verified: firebaseUser.emailVerified,
+                last_login_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'id' })
+              .select();
+            if (error) throw error;
+          } catch (e) {
+            console.error('Failed to ensure Supabase user row:', e);
+          }
+
           // Format user data
           const customUser: CustomUser = {
             id: firebaseUser.uid,

@@ -7,44 +7,21 @@ import { useTheme } from "next-themes";
 import { StructuredData } from '@/components/structured-data';
 
 interface LeaderboardEntry {
-  _id: string;
-  userId: string;
+  id: string;
+  user_id: string;
   username: string;
-  displayName?: string;
+  display_name?: string;
   wpm: number;
   accuracy: number;
   characters: number;
   errors: number;
-  testType: string;
-  testMode: string;
-  language: string;
-  createdAt: string;
+  test_type: string;
+  test_mode: string;
+  created_at: string;
   rank?: number;
 }
 
-// Mock data for leaderboard
-const mockLeaderboardData: Record<string, LeaderboardEntry[]> = {
-  "15": [
-    { _id: "1", userId: "user1", username: "speedtyper", displayName: "Speed Typer", wpm: 120, accuracy: 98.5, characters: 450, errors: 5, testType: "time", testMode: "15", language: "english", createdAt: "2023-05-15T12:00:00Z" },
-    { _id: "2", userId: "user2", username: "fastfingers", displayName: "Fast Fingers", wpm: 115, accuracy: 97.2, characters: 430, errors: 8, testType: "time", testMode: "15", language: "english", createdAt: "2023-05-16T14:30:00Z" },
-    { _id: "3", userId: "user3", username: "typingwizard", displayName: "Typing Wizard", wpm: 110, accuracy: 96.8, characters: 410, errors: 10, testType: "time", testMode: "15", language: "english", createdAt: "2023-05-17T10:15:00Z" },
-  ],
-  "30": [
-    { _id: "4", userId: "user1", username: "speedtyper", displayName: "Speed Typer", wpm: 110, accuracy: 97.5, characters: 800, errors: 12, testType: "time", testMode: "30", language: "english", createdAt: "2023-05-18T09:45:00Z" },
-    { _id: "5", userId: "user4", username: "keyhero", displayName: "Key Hero", wpm: 105, accuracy: 96.8, characters: 780, errors: 15, testType: "time", testMode: "30", language: "english", createdAt: "2023-05-19T16:20:00Z" },
-    { _id: "6", userId: "user2", username: "fastfingers", displayName: "Fast Fingers", wpm: 102, accuracy: 95.9, characters: 760, errors: 18, testType: "time", testMode: "30", language: "english", createdAt: "2023-05-20T11:10:00Z" },
-  ],
-  "60": [
-    { _id: "7", userId: "user3", username: "typingwizard", displayName: "Typing Wizard", wpm: 100, accuracy: 96.2, characters: 1450, errors: 28, testType: "time", testMode: "60", language: "english", createdAt: "2023-05-21T13:40:00Z" },
-    { _id: "8", userId: "user5", username: "wordsmith", displayName: "Word Smith", wpm: 98, accuracy: 95.8, characters: 1420, errors: 30, testType: "time", testMode: "60", language: "english", createdAt: "2023-05-22T08:30:00Z" },
-    { _id: "9", userId: "user1", username: "speedtyper", displayName: "Speed Typer", wpm: 95, accuracy: 94.5, characters: 1380, errors: 35, testType: "time", testMode: "60", language: "english", createdAt: "2023-05-23T15:15:00Z" },
-  ],
-  "120": [
-    { _id: "10", userId: "user4", username: "keyhero", displayName: "Key Hero", wpm: 92, accuracy: 95.0, characters: 2650, errors: 65, testType: "time", testMode: "120", language: "english", createdAt: "2023-05-24T10:05:00Z" },
-    { _id: "11", userId: "user2", username: "fastfingers", displayName: "Fast Fingers", wpm: 90, accuracy: 94.2, characters: 2600, errors: 70, testType: "time", testMode: "120", language: "english", createdAt: "2023-05-25T14:50:00Z" },
-    { _id: "12", userId: "user5", username: "wordsmith", displayName: "Word Smith", wpm: 88, accuracy: 93.8, characters: 2550, errors: 75, testType: "time", testMode: "120", language: "english", createdAt: "2023-05-26T09:25:00Z" },
-  ]
-};
+// Data loaded from /api/leaderboard
 
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState("30");
@@ -60,34 +37,29 @@ export default function LeaderboardPage() {
   });
 
   useEffect(() => {
-    // Simulate API fetch delay
-    setLoading(true);
-    setError(null);
-    
-    setTimeout(() => {
+    let timer: NodeJS.Timeout | null = null;
+
+    const fetchData = async () => {
       try {
-        const data = mockLeaderboardData[activeTab] || [];
-        
-        // Add rank to each entry
-        const entriesWithRank = data.map((entry: LeaderboardEntry, index: number) => ({
-          ...entry,
-          rank: index + 1
-        }));
-        
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`/api/leaderboard?mode=${activeTab}&limit=50`, { cache: 'no-store' });
+        const json = await res.json();
+        const data: LeaderboardEntry[] = json.entries || [];
+        const entriesWithRank = data.map((entry, index) => ({ ...entry, rank: index + 1 }));
         setEntries(entriesWithRank);
-        setPagination({
-          total: entriesWithRank.length,
-          page: 0,
-          limit: 10,
-          pages: Math.ceil(entriesWithRank.length / 10)
-        });
+        setPagination({ total: entriesWithRank.length, page: 0, limit: 10, pages: Math.ceil(entriesWithRank.length / 10) });
         setLoading(false);
       } catch (err) {
-        console.error("Error loading leaderboard data:", err);
-        setError("Failed to load leaderboard data");
+        console.error('Error loading leaderboard data:', err);
+        setError('Failed to load leaderboard data');
         setLoading(false);
       }
-    }, 500); // Simulate network delay
+    };
+
+    fetchData();
+    timer = setInterval(fetchData, 60_000); // poll every 1 minute
+    return () => { if (timer) clearInterval(timer); };
   }, [activeTab]);
 
   const getCardClass = () => {
@@ -109,7 +81,7 @@ export default function LeaderboardPage() {
       "position": entry.rank,
       "item": {
         "@type": "Person",
-        "name": entry.displayName || entry.username,
+        "name": entry.display_name || entry.username,
         "additionalProperty": [
           {
             "@type": "PropertyValue",
@@ -131,7 +103,7 @@ export default function LeaderboardPage() {
       {/* Add structured data */}
       <StructuredData data={structuredData} />
       
-      <h1 className="text-3xl font-bold mb-6">Leaderboard</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 text-teal-500 dark:text-teal-400">Leaderboard</h1>
       
       <Tabs defaultValue="30" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 bg-gray-100 dark:bg-gray-700">
@@ -180,12 +152,12 @@ export default function LeaderboardPage() {
                       </thead>
                       <tbody>
                         {entries.map((entry) => (
-                          <tr key={entry._id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <tr key={entry.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td className="py-2 px-4">{entry.rank}</td>
-                            <td className="py-2 px-4">{entry.displayName || entry.username}</td>
+                            <td className="py-2 px-4">{entry.display_name || entry.username}</td>
                             <td className="py-2 px-4 text-right font-semibold">{Math.round(entry.wpm)}</td>
                             <td className="py-2 px-4 text-right">{entry.accuracy.toFixed(2)}%</td>
-                            <td className="py-2 px-4 text-right">{new Date(entry.createdAt).toLocaleDateString()}</td>
+                            <td className="py-2 px-4 text-right">{new Date(entry.created_at).toLocaleDateString()}</td>
                           </tr>
                         ))}
                       </tbody>

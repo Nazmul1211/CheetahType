@@ -6,7 +6,8 @@ export interface UserSettings {
   timeOption: TimeOption;
   wordsOption: WordsOption;
   showKeyboard: boolean;
-  caretStyle: 'block' | 'underline' | 'outline';
+  caretStyle: 'block' | 'underline' | 'outline' | 'straight';
+  caretBlink: boolean;
   fontFamily: 'mono' | 'sans' | 'serif';
   fontSize: 'small' | 'medium' | 'large';
   soundEnabled: boolean;
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   wordsOption: 25,
   showKeyboard: true,
   caretStyle: 'block',
+  caretBlink: true,
   fontFamily: 'mono',
   fontSize: 'medium',
   soundEnabled: false,

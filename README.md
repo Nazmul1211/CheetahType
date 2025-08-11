@@ -20,6 +20,68 @@ CheetahType is a modern typing test application built with Next.js. It helps use
 - **Deployment**: Vercel
 
 ## Getting Started
+### Supabase Schema (proposed)
+
+Use these tables to support users, tests, leaderboard, and multiplayer. Prefer camelCase in code and snake_case in DB.
+
+1. users
+   - id (text, PK) — Firebase UID or provider UID
+   - email (text, unique)
+   - display_name (text)
+   - photo_url (text)
+   - email_verified (boolean, default false)
+   - created_at (timestamptz, default now())
+   - updated_at (timestamptz)
+   - last_login_at (timestamptz)
+
+2. tests
+   - id (uuid, PK, default gen_random_uuid())
+   - user_id (text, FK -> users.id)
+   - wpm (integer)
+   - raw_wpm (integer)
+   - accuracy (numeric)
+   - consistency (numeric)
+   - characters (integer)
+   - errors (integer)
+   - duration (integer) — seconds
+   - test_type (text) — e.g., time/words/quote
+   - test_mode (text) — e.g., 15/30/60/120
+   - text_content (text)
+   - created_at (timestamptz, default now())
+
+3. multiplayer_lobbies
+   - id (uuid, PK, default gen_random_uuid())
+   - host_user_id (text, FK -> users.id)
+   - status (text) — waiting/active/finished
+   - settings (jsonb) — room config like mode, time, words
+   - created_at (timestamptz, default now())
+   - updated_at (timestamptz)
+
+4. multiplayer_players
+   - lobby_id (uuid, FK -> multiplayer_lobbies.id)
+   - user_id (text, FK -> users.id)
+   - joined_at (timestamptz, default now())
+   - primary key (lobby_id, user_id)
+
+5. multiplayer_results
+   - id (uuid, PK)
+   - lobby_id (uuid, FK -> multiplayer_lobbies.id)
+   - user_id (text, FK -> users.id)
+   - wpm, accuracy, characters, errors, duration (numeric/int)
+   - created_at (timestamptz, default now())
+
+Views/Indexes:
+ - tests_view_leaderboard: materialized or standard view that selects best recent tests (e.g., last 24h) with user display name. Index by (test_mode, wpm desc, accuracy desc).
+
+Row Level Security:
+ - users: user can select own row, update own row
+ - tests: user can insert own rows, select own rows; public can select for leaderboard (only aggregated/latest fields)
+ - multiplayer tables: appropriate policies for participants
+
+### API Contracts
+
+GET /api/leaderboard?mode=30&limit=50 -> { entries: Array<{ id, user_id, display_name, wpm, accuracy, test_mode, created_at }> }
+
 
 ### Prerequisites
 

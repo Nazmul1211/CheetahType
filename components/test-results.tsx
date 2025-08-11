@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { getAuth } from "firebase/auth";
+import { supabaseClient } from '@/utils/supabase/client';
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 
@@ -19,6 +20,7 @@ interface TestResultsProps {
   textContent?: string;
   testType?: string;
   testMode?: string;
+  timeSeconds?: number;
   onRestart: () => void;
 }
 
@@ -33,6 +35,7 @@ export function TestResults({
   textContent,
   testType = "standard",
   testMode = "time",
+  timeSeconds,
   onRestart,
 }: TestResultsProps) {
   const { toast } = useToast();
@@ -43,13 +46,62 @@ export function TestResults({
   const correctChars = Math.max(0, characters - errors);
   const cpm = Math.round((characters / Math.max(duration, 1)) * 60);
   
-  // Save result to user profile
-  const saveResult = () => {
-    // This would typically save to a database
-    toast({
-      title: "Result Saved",
-      description: "Your test result has been saved to your profile.",
-    });
+  // Save result via API
+  const saveResult = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        toast({ title: "Sign in required", description: "Please sign in to save results.", variant: "destructive" });
+        return;
+      }
+
+      // Save the test result
+      const testData = {
+        firebase_uid: user.uid,
+        user_email: user.email,
+        wpm,
+        raw_wpm: rawWpm,
+        accuracy: accuracy / 100, // Convert percentage to decimal (0-1)
+        consistency: consistency / 100, // Convert percentage to decimal (0-1)
+        total_characters: characters,
+        correct_characters: correctChars,
+        incorrect_characters: errors,
+        total_words: Math.round(characters / 5), // Estimate words
+        correct_words: Math.round(correctChars / 5), // Estimate correct words
+        incorrect_words: Math.round(errors / 5), // Estimate incorrect words
+        actual_duration: Math.round(duration),
+        test_mode: testMode,
+        time_limit: testMode === 'time' ? (timeSeconds ?? Math.round(duration)) : null,
+        word_limit: testMode === 'words' ? Math.round(characters / 5) : null,
+        language: 'english',
+        text_content: textContent || null,
+      };
+
+      const res = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData)
+      });
+      
+      const json = await res.json();
+      
+      if (!res.ok || !json?.success) {
+        console.error('Save failed:', json);
+        throw new Error(json?.error || 'Failed to save');
+      }
+
+      console.log('Save successful:', json);
+      toast({ title: "Result Saved", description: "Your test result has been saved to your profile." });
+      
+    } catch (err: any) {
+      console.error('Failed to save result', err);
+      toast({ 
+        title: "Save failed", 
+        description: err.message || 'Could not save result. Please try again.', 
+        variant: "destructive" 
+      });
+    }
   };
 
   // Helper classes for dark mode
