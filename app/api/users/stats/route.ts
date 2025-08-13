@@ -61,13 +61,13 @@ export async function GET(request: Request) {
       // Basic statistics
       stats.averageWpm = Math.round(tests.reduce((sum, test) => sum + test.wpm, 0) / totalTests);
       stats.bestWpm = Math.max(...tests.map(test => test.wpm));
-      stats.averageAccuracy = Math.round((tests.reduce((sum, test) => sum + test.accuracy, 0) / totalTests) * 100) / 100;
-      stats.bestAccuracy = Math.max(...tests.map(test => test.accuracy));
+      stats.averageAccuracy = Math.round((tests.reduce((sum, test) => sum + test.accuracy, 0) / totalTests) * 10000) / 100; // Convert decimal (0-1) to percentage (0-100) for display
+      stats.bestAccuracy = Math.round(Math.max(...tests.map(test => test.accuracy)) * 10000) / 100; // Convert decimal (0-1) to percentage (0-100) for display
       
       const consistencyValues = tests.filter(test => test.consistency !== null).map(test => test.consistency);
       if (consistencyValues.length > 0) {
-        stats.averageConsistency = Math.round((consistencyValues.reduce((sum, val) => sum + val, 0) / consistencyValues.length) * 100) / 100;
-        stats.bestConsistency = Math.max(...consistencyValues);
+        stats.averageConsistency = Math.round((consistencyValues.reduce((sum, val) => sum + val, 0) / consistencyValues.length) * 10000) / 100; // Convert decimal (0-1) to percentage (0-100) for display
+        stats.bestConsistency = Math.round(Math.max(...consistencyValues) * 10000) / 100; // Convert decimal (0-1) to percentage (0-100) for display
       }
 
       stats.totalTimeSpent = tests.reduce((sum, test) => sum + test.actual_duration, 0);
@@ -77,8 +77,8 @@ export async function GET(request: Request) {
       stats.recentTests = tests.slice(0, 10).map(test => ({
         id: test.id,
         wpm: test.wpm,
-        accuracy: test.accuracy,
-        consistency: test.consistency,
+        accuracy: Math.round(test.accuracy * 10000) / 100, // Convert decimal (0-1) to percentage (0-100) for display
+        consistency: test.consistency ? Math.round(test.consistency * 10000) / 100 : null, // Convert decimal (0-1) to percentage (0-100) for display
         test_mode: test.test_mode,
         time_limit: test.time_limit,
         word_limit: test.word_limit,
@@ -124,8 +124,8 @@ export async function GET(request: Request) {
           modeTests.reduce((sum, test) => sum + test.wpm, 0) / modeTests.length
         );
         stats.testsByMode[mode].averageAccuracy = Math.round(
-          (modeTests.reduce((sum, test) => sum + test.accuracy, 0) / modeTests.length) * 100
-        ) / 100;
+          (modeTests.reduce((sum, test) => sum + test.accuracy, 0) / modeTests.length) * 10000
+        ) / 100; // Convert decimal (0-1) to percentage (0-100) for display
       });
 
       // Tests by time limit (for time mode)
@@ -154,8 +154,8 @@ export async function GET(request: Request) {
           timeLimitTests.reduce((sum, test) => sum + test.wpm, 0) / timeLimitTests.length
         );
         stats.testsByTimeLimit[timeLimit].averageAccuracy = Math.round(
-          (timeLimitTests.reduce((sum, test) => sum + test.accuracy, 0) / timeLimitTests.length) * 100
-        ) / 100;
+          (timeLimitTests.reduce((sum, test) => sum + test.accuracy, 0) / timeLimitTests.length) * 10000
+        ) / 100; // Convert decimal (0-1) to percentage (0-100) for display
       });
     }
 

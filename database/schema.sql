@@ -25,7 +25,7 @@ CREATE TABLE public.users (
     last_login_at TIMESTAMPTZ DEFAULT NOW(),
     
     -- User preferences
-    preferred_test_mode TEXT DEFAULT 'time',
+    preferred_test_mode TEXT DEFAULT 'time' CHECK (preferred_test_mode IN ('time', 'words', 'quote', 'custom', 'punctuation', 'numbers', 'zen')),
     preferred_time_duration INTEGER DEFAULT 30,
     preferred_words_count INTEGER DEFAULT 25,
     
@@ -45,7 +45,7 @@ CREATE TABLE public.typing_tests (
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     
     -- Test configuration
-    test_mode TEXT NOT NULL CHECK (test_mode IN ('time', 'words', 'quote', 'custom')),
+    test_mode TEXT NOT NULL CHECK (test_mode IN ('time', 'words', 'quote', 'custom', 'punctuation', 'numbers', 'zen')),
     test_type TEXT DEFAULT 'standard',
     time_limit INTEGER, -- in seconds (for time mode)
     word_limit INTEGER, -- number of words (for words mode)
@@ -273,3 +273,71 @@ GRANT ALL ON SCHEMA public TO service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO service_role;
+
+-- =====================================
+-- Advanced Analytics Tables
+-- =====================================
+
+-- Character performance tracking table
+CREATE TABLE IF NOT EXISTS public.character_performance (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    test_id UUID NOT NULL REFERENCES public.typing_tests(id) ON DELETE CASCADE,
+    character CHAR(1) NOT NULL,
+    total_typed INTEGER NOT NULL DEFAULT 0,
+    correct_typed INTEGER NOT NULL DEFAULT 0,
+    incorrect_typed INTEGER NOT NULL DEFAULT 0,
+    average_speed DECIMAL(8,2) NOT NULL DEFAULT 0.00, -- Characters per minute
+    error_rate DECIMAL(5,4) NOT NULL DEFAULT 0.0000 CHECK (error_rate >= 0 AND error_rate <= 1),
+    difficulty_score DECIMAL(5,2) NOT NULL DEFAULT 0.00, -- Calculated difficulty based on position, frequency, etc.
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for character performance
+CREATE INDEX IF NOT EXISTS idx_character_performance_user_character ON public.character_performance(user_id, character);
+CREATE INDEX IF NOT EXISTS idx_character_performance_test ON public.character_performance(test_id);
+CREATE INDEX IF NOT EXISTS idx_character_performance_weakness ON public.character_performance(user_id, error_rate DESC, average_speed ASC);
+
+-- Custom practice texts table
+CREATE TABLE IF NOT EXISTS public.custom_practice_texts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    target_character CHAR(1) NOT NULL,
+    practice_text TEXT NOT NULL,
+    difficulty_level INTEGER NOT NULL DEFAULT 1 CHECK (difficulty_level BETWEEN 1 AND 5),
+    word_count INTEGER NOT NULL DEFAULT 0,
+    character_frequency DECIMAL(5,4) NOT NULL DEFAULT 0.0000, -- Frequency of target character in text
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Indexes for custom practice texts
+CREATE INDEX IF NOT EXISTS idx_custom_practice_user_character ON public.custom_practice_texts(user_id, target_character);
+CREATE INDEX IF NOT EXISTS idx_custom_practice_difficulty ON public.custom_practice_texts(difficulty_level, character_frequency DESC);
+
+-- User improvement recommendations table
+CREATE TABLE IF NOT EXISTS public.improvement_recommendations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    target_character CHAR(1) NOT NULL,
+    recommendation_type VARCHAR(50) NOT NULL CHECK (recommendation_type IN ('practice', 'technique', 'finger_placement', 'speed', 'accuracy')),
+    priority_score DECIMAL(5,2) NOT NULL DEFAULT 0.00, -- Higher score = higher priority
+    recommendation_text TEXT NOT NULL,
+    practice_text_id UUID REFERENCES public.custom_practice_texts(id),
+    is_completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+-- Indexes for recommendations
+CREATE INDEX IF NOT EXISTS idx_recommendations_user_priority ON public.improvement_recommendations(user_id, priority_score DESC);
+CREATE INDEX IF NOT EXISTS idx_recommendations_character ON public.improvement_recommendations(target_character);
+
+-- Grant permissions for new tables
+GRANT ALL ON public.character_performance TO authenticated;
+GRANT ALL ON public.custom_practice_texts TO authenticated;
+GRANT ALL ON public.improvement_recommendations TO authenticated;
+GRANT ALL ON public.character_performance TO service_role;
+GRANT ALL ON public.custom_practice_texts TO service_role;
+GRANT ALL ON public.improvement_recommendations TO service_role;

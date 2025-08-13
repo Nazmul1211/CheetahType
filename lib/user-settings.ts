@@ -6,7 +6,7 @@ export interface UserSettings {
   timeOption: TimeOption;
   wordsOption: WordsOption;
   showKeyboard: boolean;
-  caretStyle: 'block' | 'underline' | 'outline' | 'straight';
+  caretStyle: 'block' | 'underline' | 'outline' | 'straight' | 'cursor';
   caretBlink: boolean;
   fontFamily: 'mono' | 'sans' | 'serif';
   fontSize: 'small' | 'medium' | 'large';

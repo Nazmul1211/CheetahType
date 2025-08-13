@@ -1,10 +1,26 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/utils/supabase/admin';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
 export async function POST() {
   try {
+    // Check if we're in build time or missing required environment variables
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
+      return NextResponse.json({ 
+        error: 'Database setup not available during build time' 
+      }, { status: 400 });
+    }
+
+    // Check for required environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ 
+        error: 'Missing required Supabase environment variables' 
+      }, { status: 400 });
+    }
+
+    // Dynamically import the admin client only when we actually need it
+    const { supabaseAdmin } = await import('@/utils/supabase/admin');
+
     console.log('Setting up CheetahType database schema...');
     
     // Read the schema file

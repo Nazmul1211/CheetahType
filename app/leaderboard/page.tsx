@@ -43,7 +43,7 @@ export default function LeaderboardPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`/api/leaderboard?mode=${activeTab}&limit=50`, { cache: 'no-store' });
+        const res = await fetch(`/api/leaderboard?mode=time&time_limit=${activeTab}&limit=50`, { cache: 'no-store' });
         const json = await res.json();
         const data: LeaderboardEntry[] = json.entries || [];
         const entriesWithRank = data.map((entry, index) => ({ ...entry, rank: index + 1 }));
@@ -142,22 +142,50 @@ export default function LeaderboardPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-gray-700">
-                          <th className="py-2 px-4 text-left">Rank</th>
-                          <th className="py-2 px-4 text-left">User</th>
-                          <th className="py-2 px-4 text-right">WPM</th>
-                          <th className="py-2 px-4 text-right">Accuracy</th>
-                          <th className="py-2 px-4 text-right">Date</th>
+                        <tr className="border-b-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50">
+                          <th className="py-3 px-4 text-left font-semibold text-gray-700 dark:text-gray-300">Rank</th>
+                          <th className="py-3 px-4 text-left font-semibold text-gray-700 dark:text-gray-300">Player</th>
+                          <th className="py-3 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">Speed</th>
+                          <th className="py-3 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">Accuracy</th>
+                          <th className="py-3 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">Date</th>
                         </tr>
                       </thead>
                       <tbody>
                         {entries.map((entry) => (
-                          <tr key={entry.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="py-2 px-4">{entry.rank}</td>
-                            <td className="py-2 px-4">{entry.display_name || entry.username}</td>
-                            <td className="py-2 px-4 text-right font-semibold">{Math.round(entry.wpm)}</td>
-                            <td className="py-2 px-4 text-right">{entry.accuracy.toFixed(2)}%</td>
-                            <td className="py-2 px-4 text-right">{new Date(entry.created_at).toLocaleDateString()}</td>
+                          <tr key={entry.id} className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
+                            entry.rank === 1 ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20' : ''
+                          }`}>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                {entry.rank === 1 && (
+                                  <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M9.664 1.319a.75.75 0 01.672 0 41.059 41.059 0 018.198 5.424.75.75 0 01-.254 1.285 31.372 31.372 0 00-7.86 3.83.75.75 0 01-.84 0 31.508 31.508 0 00-2.08-1.287V9.394c0-.244.116-.463.302-.592a35.504 35.504 0 013.305-2.033.75.75 0 00-.714-1.319 37 37 0 00-3.446 2.12A2.216 2.216 0 006 9.393v.38a31.293 31.293 0 00-4.28-1.746.75.75 0 01-.254-1.285 41.059 41.059 0 018.198-5.424zM6 11.459a29.848 29.848 0 00-2.455-1.158 41.029 41.029 0 00-.39 3.114.75.75 0 00.419.74c.528.256 1.046.53 1.554.82-.21-.899-.385-1.804-.528-2.716zM16 11.459c-.143.912-.318 1.817-.528 2.716.508-.29 1.026-.564 1.554-.82a.75.75 0 00.419-.74 41.029 41.029 0 00-.39-3.114 29.848 29.848 0 00-2.455 1.158z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                                <span className={`font-semibold ${entry.rank === 1 ? 'text-yellow-600 dark:text-yellow-400' : ''}`}>
+                                  #{entry.rank}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`font-medium ${entry.rank === 1 ? 'text-yellow-700 dark:text-yellow-300' : ''}`}>
+                                {entry.display_name || entry.username}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <span className={`font-bold text-lg ${entry.rank === 1 ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                {Math.round(entry.wpm)}
+                              </span>
+                              <span className="text-sm text-gray-500 ml-1">WPM</span>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <span className={`font-semibold ${entry.rank === 1 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>
+                                {entry.accuracy.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right text-sm text-gray-500">
+                              {new Date(entry.created_at).toLocaleDateString()}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

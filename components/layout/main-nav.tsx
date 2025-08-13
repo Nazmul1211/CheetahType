@@ -77,10 +77,10 @@ export function MainNav() {
   // Additional tools that should be available in the header
   const tools = [
     {
-      href: "/profile",
-      label: "Stats",
+      href: "/dashboard",
+      label: "Typing Performance Dashboard",
       icon: <BarChart className="h-4 w-4" />,
-      active: pathname === "/profile",
+      active: pathname === "/dashboard",
       show: !!user,
     },
   ];
@@ -250,10 +250,18 @@ export function MainNav() {
                     </div>
                     <DropdownMenuItem asChild>
                       <Link
+                        href="/dashboard"
+                        className={`dark:text-slate-300 cursor-pointer font-medium hover:text-slate-300`}
+                      >
+                        Improvement Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
                         href="/profile"
                         className={`dark:text-slate-300 cursor-pointer font-medium hover:text-slate-300`}
                       >
-                        Profile
+                        Profile & Stats
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem

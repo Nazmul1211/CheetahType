@@ -82,6 +82,62 @@ export function TypingTest({
   const [currentKey, setCurrentKey] = useState<string | null>(null);
   const [wpmHistory, setWpmHistory] = useState<number[]>([]);
   const [commandLineOpen, setCommandLineOpen] = useState(false);
+  
+  // Character-level performance tracking
+  const [characterPerformance, setCharacterPerformance] = useState<{[key: string]: {
+    total_typed: number;
+    correct_typed: number;
+    incorrect_typed: number;
+    total_time: number; // Total time spent on this character (ms)
+    speeds: number[]; // Individual typing speeds for this character
+  }}>({});
+  const [lastKeystrokeTime, setLastKeystrokeTime] = useState<number>(Date.now());
+
+  // Save character performance data to the API
+  const saveCharacterPerformance = async (testId: string, firebase_uid: string) => {
+    try {
+      // Process character performance data for API
+      const performanceData: {[key: string]: any} = {};
+      
+      Object.entries(characterPerformance).forEach(([char, data]) => {
+        if (data.total_typed > 0) {
+          const avgSpeed = data.speeds.length > 0 
+            ? data.speeds.reduce((sum, speed) => sum + speed, 0) / data.speeds.length 
+            : 0;
+          
+          performanceData[char] = {
+            total_typed: data.total_typed,
+            correct_typed: data.correct_typed,
+            incorrect_typed: data.incorrect_typed,
+            average_speed: avgSpeed,
+            error_rate: data.total_typed > 0 ? (data.incorrect_typed / data.total_typed) * 100 : 0,
+            difficulty_score: avgSpeed > 0 ? Math.max(0, 100 - avgSpeed) : 100, // Lower speed = higher difficulty
+          };
+        }
+      });
+
+      if (Object.keys(performanceData).length > 0) {
+        const response = await fetch('/api/character-performance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firebase_uid,
+            test_id: testId,
+            character_performance: performanceData
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.success) {
+          console.error('Failed to save character performance:', result);
+        } else {
+          console.log('Character performance saved successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Error saving character performance:', error);
+    }
+  };
 
   // Detect mobile device for keyboard display
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -119,6 +175,8 @@ export function TypingTest({
     setIsFinished(false);
     setStats(null);
     setWpmHistory([]);
+    setCharacterPerformance({}); // Reset character tracking
+    setLastKeystrokeTime(Date.now());
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -172,7 +230,9 @@ export function TypingTest({
       .split("")
       .filter((char, i) => char !== text[i]).length;
     const totalChars = userInput.length;
-    const timeInSeconds = elapsedTime > 0 ? elapsedTime : 1;
+    // For timed tests, use the exact time option if test completed normally
+    // For other modes or incomplete tests, use actual elapsed time
+    const timeInSeconds = (testMode === 'time') ? timeOption : (elapsedTime > 0 ? elapsedTime : 1);
 
     // Find positions where errors occurred
     const errors: number[] = [];
@@ -207,29 +267,25 @@ export function TypingTest({
     console.log("Setting stats:", finalStats);
     setStats(finalStats);
 
-    // Auto-save result to Supabase if user is signed in
-    try {
-      const authInstance = getAuth();
-      const currentUser = authInstance.currentUser;
-      if (currentUser) {
-        const { error } = await supabaseClient.from('tests').insert({
-          user_id: currentUser.uid,
-          wpm: finalStats.wpm,
-          raw_wpm: Math.round(finalStats.wpm * (100 / Math.max(finalStats.accuracy, 50))),
-          accuracy: finalStats.accuracy,
-          consistency: finalStats.consistency,
-          characters: finalStats.totalChars,
-          errors: finalStats.incorrectChars,
-          duration: finalStats.elapsedTime,
-          test_type: testMode,
-          test_mode: testMode,
+    // Save character performance data locally for dashboard analytics
+    const authInstance = getAuth();
+    const currentUser = authInstance.currentUser;
+    if (currentUser && Object.keys(characterPerformance).length > 0) {
+      try {
+        await fetch('/api/character-performance/local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firebase_uid: currentUser.uid,
+            character_performance: characterPerformance
+          })
         });
-        if (error) console.error('Failed to auto-save test', error);
+        console.log('Character performance saved locally for dashboard');
+      } catch (error) {
+        console.error('Failed to save character performance locally:', error);
       }
-    } catch (e) {
-      console.error('Auto-save exception', e);
     }
-  }, [isActive, text, userInput, elapsedTime, wpmHistory]);
+  }, [isActive, text, userInput, elapsedTime, wpmHistory, testMode, timeOption, characterPerformance]);
 
   // Update the endTestRef whenever endTest changes
   useEffect(() => {
@@ -254,9 +310,11 @@ export function TypingTest({
 
         console.log(`Timer update: ${newRemainingTime}s remaining`);
 
-        // For all modes: end test when time runs out
+        // For all modes: end test when time runs out (allow exactly timeOption seconds)
         if (newRemainingTime === 0) {
-          console.log("Timer reached zero, ending test");
+          console.log("Timer reached target time, ending test");
+          // Set the final elapsed time to exactly the time option for accurate display
+          setElapsedTime(timeOption);
           if (endTestRef.current) endTestRef.current();
         }
       }, 1000);
@@ -271,9 +329,46 @@ export function TypingTest({
   // Handle user input
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    const currentTime = Date.now();
 
     if (!isActive && !isFinished) {
       startTimer();
+      setLastKeystrokeTime(currentTime);
+    }
+
+    // Track character-level performance for new characters
+    if (value.length > userInput.length) {
+      const newCharIndex = value.length - 1;
+      const typedChar = value[newCharIndex];
+      const expectedChar = text[newCharIndex];
+      const timeSinceLastKeystroke = currentTime - lastKeystrokeTime;
+      
+      // Calculate speed for this character (characters per minute)
+      const charSpeed = timeSinceLastKeystroke > 0 ? (60000 / timeSinceLastKeystroke) : 0;
+
+      // Update character performance tracking
+      setCharacterPerformance(prev => {
+        const current = prev[expectedChar] || {
+          total_typed: 0,
+          correct_typed: 0,
+          incorrect_typed: 0,
+          total_time: 0,
+          speeds: []
+        };
+
+        return {
+          ...prev,
+          [expectedChar]: {
+            total_typed: current.total_typed + 1,
+            correct_typed: current.correct_typed + (typedChar === expectedChar ? 1 : 0),
+            incorrect_typed: current.incorrect_typed + (typedChar !== expectedChar ? 1 : 0),
+            total_time: current.total_time + timeSinceLastKeystroke,
+            speeds: [...current.speeds, charSpeed].slice(-10) // Keep last 10 speeds for this character
+          }
+        };
+      });
+
+      setLastKeystrokeTime(currentTime);
     }
 
     setUserInput(value);

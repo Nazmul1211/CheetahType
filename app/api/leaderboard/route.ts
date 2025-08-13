@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const mode = url.searchParams.get('mode') || 'time';
-    const timeLimit = url.searchParams.get('time_limit') || '30';
+    const timeLimit = url.searchParams.get('time_limit'); // Get time_limit from query params
     const limit = Number(url.searchParams.get('limit') || '50');
     const period = url.searchParams.get('period') || '30d'; // 7d, 30d, all
 
@@ -81,10 +81,10 @@ export async function GET(request: Request) {
         display_name: user?.display_name,
         wpm: test.wpm,
         raw_wpm: test.raw_wpm,
-        accuracy: test.accuracy,
-        consistency: test.consistency,
+        accuracy: Math.round(test.accuracy * 10000) / 100, // Convert decimal (0-1) to percentage (0-100) for display
+        consistency: test.consistency ? Math.round(test.consistency * 10000) / 100 : null, // Convert decimal (0-1) to percentage (0-100) for display
         characters: test.total_characters,
-        errors: test.total_characters - Math.round(test.total_characters * (test.accuracy / 100)),
+        errors: test.total_characters - Math.round(test.total_characters * test.accuracy), // Use decimal accuracy for calculation
         test_type: 'standard',
         test_mode: test.test_mode,
         time_limit: test.time_limit,

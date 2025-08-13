@@ -345,12 +345,12 @@ export default function ProfilePage() {
               </div>
               <div className={`p-4 rounded-lg border ${getInnerCardClass()}`}>
                 <div className="text-sm text-muted-foreground">Accuracy</div>
-                <div className={`text-3xl font-bold ${getTextClass()}`}>{(latestTest.accuracy * 100).toFixed(1)}%</div>
+                <div className={`text-3xl font-bold ${getTextClass()}`}>{latestTest.accuracy.toFixed(1)}%</div>
               </div>
               <div className={`p-4 rounded-lg border ${getInnerCardClass()}`}>
                 <div className="text-sm text-muted-foreground">Consistency</div>
                 <div className={`text-3xl font-bold ${getTextClass()}`}>
-                  {latestTest.consistency ? (latestTest.consistency * 100).toFixed(1) : 'N/A'}%
+                  {latestTest.consistency ? latestTest.consistency.toFixed(1) : 'N/A'}%
                 </div>
               </div>
               <div className={`p-4 rounded-lg border ${getInnerCardClass()}`}>
@@ -426,7 +426,7 @@ export default function ProfilePage() {
                     <div className="flex justify-between items-center">
                       <div className="flex gap-4">
                         <span className={`font-bold ${getTextClass()}`}>{test.wpm} WPM</span>
-                        <span className={getSubTextClass()}>{(test.accuracy * 100).toFixed(1)}%</span>
+                        <span className={getSubTextClass()}>{test.accuracy.toFixed(1)}%</span>
                         <span className={`text-xs ${getSubTextClass()}`}>{test.test_mode}</span>
                       </div>
                       <span className={`text-xs ${getSubTextClass()}`}>

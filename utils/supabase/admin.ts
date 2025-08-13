@@ -1,12 +1,38 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-// Prefer server-only key; fallback to public if provided for now
-const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY) as string;
+// Get environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
 
-if (!serviceRoleKey) {
-  // eslint-disable-next-line no-console
-  console.warn('SUPABASE_SERVICE_ROLE_KEY not set. Admin operations will fail.');
+// Create a lazy-initialized admin client that only throws errors when actually used
+let adminClient: SupabaseClient | null = null;
+
+function getAdminClient(): SupabaseClient {
+  if (!adminClient) {
+    if (!supabaseUrl) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_URL is required');
+    }
+    
+    if (!serviceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations');
+    }
+    
+    adminClient = createClient(supabaseUrl, serviceRoleKey);
+  }
+  
+  return adminClient;
 }
 
-export const supabaseAdmin = createClient(supabaseUrl || '', serviceRoleKey || '');
+// Export a proxy that initializes the client only when methods are called
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(target, prop) {
+    const client = getAdminClient();
+    const value = (client as any)[prop];
+    
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    
+    return value;
+  }
+});

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { TypingTest } from '@/components/typing-test';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { useUserSettings } from '@/lib/user-settings';
@@ -23,14 +24,32 @@ interface SiteStats {
   recentTests: number;
 }
 
-export default function Home() {
+function HomeContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { settings, updateSettings, resetSettings } = useUserSettings();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
+  const searchParams = useSearchParams();
   
   const [stats, setStats] = useState<SiteStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [customTextFromUrl, setCustomTextFromUrl] = useState<string | undefined>(undefined);
+
+  // Handle URL parameters for custom text
+  useEffect(() => {
+    const customText = searchParams.get('custom_text');
+    const focusChar = searchParams.get('focus_char');
+    
+    if (customText) {
+      setCustomTextFromUrl(decodeURIComponent(customText));
+      // Optionally set focus character or other parameters
+      if (focusChar) {
+        console.log('Focus character:', focusChar);
+      }
+    } else {
+      setCustomTextFromUrl(undefined);
+    }
+  }, [searchParams]);
 
   // Fetch site statistics
   useEffect(() => {
@@ -155,9 +174,9 @@ export default function Home() {
             showKeyboard={settings.showKeyboard}
             fontFamily={settings.fontFamily}
             fontSize="large"
-            caretStyle={settings.caretStyle}
+            caretStyle={settings.caretStyle as "block" | "underline" | "outline" | "straight"}
             soundEnabled={settings.soundEnabled}
-            customText={settings.customText}
+            customText={customTextFromUrl || settings.customText}
           />
         </section>
         
@@ -322,5 +341,13 @@ export default function Home() {
       />
       <Toaster />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

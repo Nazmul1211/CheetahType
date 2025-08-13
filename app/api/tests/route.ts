@@ -38,6 +38,14 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // Validate accuracy is in correct range (0-1 decimal format)
+    if (typeof accuracy !== 'number' || accuracy < 0 || accuracy > 1) {
+      console.error('Invalid accuracy value:', accuracy);
+      return NextResponse.json({ 
+        error: 'Accuracy must be a number between 0 and 1' 
+      }, { status: 400 });
+    }
+
     // First, ensure the user exists
     let user;
     const { data: existingUser, error: userLookupError } = await supabaseAdmin
@@ -78,6 +86,31 @@ export async function POST(request: Request) {
 
     console.log('Using user:', user);
 
+    // Check for duplicate recent saves to prevent multiple identical saves
+    const { data: recentTests, error: duplicateCheckError } = await supabaseAdmin
+      .from('typing_tests')
+      .select('wpm, accuracy, total_characters, created_at')
+      .eq('user_id', user.id)
+      .gte('created_at', new Date(Date.now() - 30000).toISOString()) // Within last 30 seconds
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!duplicateCheckError && recentTests && recentTests.length > 0) {
+      // Check if we have identical test data in the last 30 seconds
+      const isDuplicate = recentTests.some(test => 
+        Math.abs(test.wpm - Math.round(wpm)) <= 1 &&
+        Math.abs(test.accuracy - accuracy) <= 0.01 && // Compare decimal values directly
+        Math.abs(test.total_characters - (total_characters || 0)) <= 5
+      );
+      
+      if (isDuplicate) {
+        console.log('Duplicate test detected, skipping save');
+        return NextResponse.json({ 
+          error: 'Duplicate test result detected. Please wait before saving again.' 
+        }, { status: 409 });
+      }
+    }
+
     // Calculate derived values if not provided
     const calculatedTotalChars = total_characters || Math.round(wpm * actual_duration / 60 * 5);
     const calculatedCorrectChars = correct_characters || Math.round(calculatedTotalChars * accuracy);
@@ -86,26 +119,39 @@ export async function POST(request: Request) {
     const calculatedCorrectWords = correct_words || Math.round(calculatedCorrectChars / 5);
     const calculatedIncorrectWords = incorrect_words || Math.round(calculatedIncorrectChars / 5);
 
-    // Prepare test data
+    // Prepare test data - ensure ALL required fields are present and properly formatted
     const testData = {
       user_id: user.id,
       test_mode: test_mode || 'time',
       time_limit: time_limit,
       word_limit: word_limit,
       text_content: text_content || null,
-      wpm: Number(wpm.toFixed(2)),
-      raw_wpm: raw_wpm ? Number(raw_wpm.toFixed(2)) : Number((wpm * 1.1).toFixed(2)),
-      accuracy: Number(accuracy.toFixed(4)), // Store as decimal (0-1)
-      consistency: consistency ? Number(consistency.toFixed(4)) : null, // Store as decimal (0-1)
+      wpm: Math.round(wpm), // Convert to INTEGER as expected by database
+      raw_wpm: raw_wpm ? Math.round(raw_wpm) : Math.round(wpm * 1.1), // Convert to INTEGER
+      accuracy: Math.min(1, Math.max(0, Number(accuracy.toFixed(4)))), // Keep as decimal (0-1) for DECIMAL(5,4) constraint
+      consistency: consistency ? Math.min(1, Math.max(0, Number(consistency.toFixed(4)))) : null, // Keep as decimal (0-1) for DECIMAL(5,4) constraint
       total_characters: calculatedTotalChars,
       correct_characters: calculatedCorrectChars,
       incorrect_characters: calculatedIncorrectChars,
-      total_words: calculatedTotalWords,
-      correct_words: calculatedCorrectWords,
-      incorrect_words: calculatedIncorrectWords,
+      total_words: calculatedTotalWords, // Required field - include it
+      correct_words: calculatedCorrectWords, // Required field - include it  
+      incorrect_words: calculatedIncorrectWords, // Required field - include it
       actual_duration: Math.round(actual_duration),
       language: language || 'english'
     };
+
+    // Validate all required numeric fields are present and valid
+    const requiredFields = ['wpm', 'raw_wpm', 'accuracy', 'total_characters', 'correct_characters', 'incorrect_characters', 'total_words', 'correct_words', 'incorrect_words', 'actual_duration'];
+    for (const field of requiredFields) {
+      if (testData[field as keyof typeof testData] === null || testData[field as keyof typeof testData] === undefined || isNaN(Number(testData[field as keyof typeof testData]))) {
+        console.error(`Invalid ${field}:`, testData[field as keyof typeof testData]);
+        return NextResponse.json({ 
+          error: `Invalid ${field} value. Please try again with a new test.` 
+        }, { status: 400 });
+      }
+    }
+
+    console.log('Final test data to insert:', testData);
 
     const { data: insertData, error: insertError } = await supabaseAdmin
       .from('typing_tests')
@@ -115,8 +161,18 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error('Error inserting test:', insertError);
+      if (insertError.code === '22003') {
+        return NextResponse.json({ 
+          error: 'Invalid data value detected, please try again with a new test.' 
+        }, { status: 400 });
+      }
+      if (insertError.code === '23502') {
+        return NextResponse.json({ 
+          error: 'Missing required data. Please try again with a new test.' 
+        }, { status: 400 });
+      }
       return NextResponse.json({ 
-        error: 'Failed to save test result: ' + insertError.message 
+        error: 'Failed to save test result. Please try again.' 
       }, { status: 500 });
     }
 
