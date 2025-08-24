@@ -7,6 +7,7 @@ export interface TypingStats {
   elapsedTime: number;
   consistency: number;
   wpmHistory: number[];
+  errorHistory?: number[];  // Errors count per second
   errors: number[];  // Positions where errors occurred
 }
 

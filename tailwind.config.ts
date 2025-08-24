@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'mono': ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        'numbers': ['var(--font-roboto-mono)', 'Roboto Mono', 'ui-monospace', 'monospace'], // Best for number displays
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

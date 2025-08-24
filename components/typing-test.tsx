@@ -81,6 +81,7 @@ export function TypingTest({
   const [stats, setStats] = useState<TypingStats | null>(null);
   const [currentKey, setCurrentKey] = useState<string | null>(null);
   const [wpmHistory, setWpmHistory] = useState<number[]>([]);
+  const [errorHistory, setErrorHistory] = useState<number[]>([]); // Track errors per second
   const [commandLineOpen, setCommandLineOpen] = useState(false);
   
   // Character-level performance tracking
@@ -175,6 +176,7 @@ export function TypingTest({
     setIsFinished(false);
     setStats(null);
     setWpmHistory([]);
+    setErrorHistory([]);
     setCharacterPerformance({}); // Reset character tracking
     setLastKeystrokeTime(Date.now());
 
@@ -189,7 +191,7 @@ export function TypingTest({
     }
   }, [testMode, wordsOption, timeOption, customText]);
 
-  // Calculate current WPM
+  // Calculate current WPM and track errors
   const calculateCurrentWPM = useCallback(() => {
     if (!startTime || !isActive) return;
 
@@ -200,7 +202,13 @@ export function TypingTest({
       .filter((char, i) => char === text[i]).length;
     const currentWPM = calculateWPM(correctChars, timeElapsed);
 
+    // Count current errors
+    const currentErrors = userInput
+      .split("")
+      .filter((char, i) => char !== text[i] && i < text.length).length;
+
     setWpmHistory((prev) => [...prev, currentWPM]);
+    setErrorHistory((prev) => [...prev, currentErrors]);
   }, [startTime, isActive, userInput, text]);
 
   // End the test
@@ -261,6 +269,7 @@ export function TypingTest({
       elapsedTime: timeInSeconds,
       consistency: calculateConsistency(wpmHistory),
       wpmHistory,
+      errorHistory,
       errors,
     };
 
@@ -700,6 +709,7 @@ export function TypingTest({
               timeSeconds={testMode === 'time' ? timeOption : undefined}
               textContent={text.substring(0, userInput.length)}
               wpmHistory={stats.wpmHistory}
+              errorHistory={stats.errorHistory}
               onRestart={restartTest}
             />
           </div>

@@ -34,6 +34,7 @@ interface TestResultsProps {
   testMode?: 'time' | 'words' | 'zen';
   timeSeconds?: number;
   wpmHistory?: number[];
+  errorHistory?: number[];  // New prop for error tracking
   onRestart: () => void;
 }
 
@@ -51,6 +52,7 @@ const TestResults = ({
   testMode = 'time',
   timeSeconds,
   wpmHistory = [],
+  errorHistory = [],
   onRestart
 }: TestResultsProps) => {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -86,12 +88,14 @@ const TestResults = ({
         // Add error indicators randomly based on accuracy
         const errorProbability = (100 - accuracy) / 100 * 0.3; // Lower accuracy = more errors
         const hasError = Math.random() < errorProbability;
+        const syntheticErrors = Math.round((errors / totalDuration) * second);
         
         dataPoints.push({
           time: second,
           timeLabel: `${second}s`,
           wpm: currentWpm,
           rawWpm: currentRawWpm,
+          errors: syntheticErrors,
           hasError: hasError,
         });
       }
@@ -111,17 +115,32 @@ const TestResults = ({
       const rawMultiplier = Math.max(1.4, 100 / Math.max(accuracy, 70));
       const currentRawWpm = Math.round(currentWpm * rawMultiplier);
       
-      // Add error indicator based on accuracy progression
-      const errorProgressRatio = Math.min(1, (second / totalDuration) * 1.3);
-      const currentErrors = Math.round(errors * errorProgressRatio);
-      const previousErrors = second > 1 ? Math.round(errors * Math.min(1, ((second - 1) / totalDuration) * 1.3)) : 0;
-      const hasError = currentErrors > previousErrors;
+      // Use real error history if available, otherwise fallback to synthetic
+      let currentErrors = 0;
+      let hasError = false;
+      
+      if (errorHistory && errorHistory.length > 0) {
+        const errorIndex = Math.min(
+          Math.floor((second - 1) / totalDuration * errorHistory.length),
+          errorHistory.length - 1
+        );
+        currentErrors = errorHistory[errorIndex] || 0;
+        const previousErrors = errorIndex > 0 ? (errorHistory[errorIndex - 1] || 0) : 0;
+        hasError = currentErrors > previousErrors;
+      } else {
+        // Fallback to synthetic error tracking
+        const errorProgressRatio = Math.min(1, (second / totalDuration) * 1.3);
+        currentErrors = Math.round(errors * errorProgressRatio);
+        const previousErrors = second > 1 ? Math.round(errors * Math.min(1, ((second - 1) / totalDuration) * 1.3)) : 0;
+        hasError = currentErrors > previousErrors;
+      }
       
       dataPoints.push({
         time: second,
         timeLabel: `${second}s`,
         wpm: Math.round(currentWpm),
         rawWpm: currentRawWpm,
+        errors: currentErrors,
         hasError: hasError,
       });
     }
@@ -157,10 +176,18 @@ const TestResults = ({
                 {data.rawWpm}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className={cn(isDark ? "text-gray-300" : "text-gray-600")}>Errors:</span>
+              <span className={cn("font-medium", isDark ? "text-red-400" : "text-red-600")}>
+                {data.errors || 0}
+              </span>
+            </div>
             {data.hasError && (
-              <div className="flex justify-between">
-                <span className={cn(isDark ? "text-gray-300" : "text-gray-600")}>Error:</span>
-                <span className="font-medium text-red-500">●</span>
+              <div className="text-center mt-1">
+                <span className="text-red-500 text-lg">●</span>
+                <span className={cn("text-xs ml-1", isDark ? "text-gray-400" : "text-gray-500")}>
+                  New Error
+                </span>
               </div>
             )}
           </div>
@@ -199,35 +226,35 @@ const TestResults = ({
       {/* Main Layout: Stats (15%) + Chart (85%) - Compact spacing */}
       <div className="flex flex-col lg:flex-row gap-4 min-h-[35vh]">
         
-        {/* Stats Section - Left Side (15%) - Only WPM and Accuracy with smaller fonts */}
+        {/* Stats Section - Positioned parallel to the chart */}
         <div className="lg:w-[15%] flex flex-col justify-center">
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-            {/* WPM */}
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+            {/* WPM - Using Roboto Mono for better number display */}
             <div className="text-center">
               <div className={cn(
-                "text-3xl lg:text-5xl font-bold mb-1 leading-none", // Increased font size
+                "text-4xl lg:text-6xl font-bold mb-1 leading-none font-numbers", // Increased size + Roboto Mono
                 isDark ? "text-yellow-400" : "text-amber-600"
               )}>
                 {wpm}
               </div>
               <div className={cn(
-                "text-sm lg:text-base font-medium tracking-wider uppercase", // Increased font size
+                "text-base lg:text-lg font-medium tracking-wider uppercase font-numbers", // Increased label size
                 isDark ? "text-gray-300" : "text-gray-700"
               )}>
                 wpm
               </div>
             </div>
             
-            {/* Accuracy */}
+            {/* Accuracy - Using Roboto Mono for better number display */}
             <div className="text-center">
               <div className={cn(
-                "text-3xl lg:text-5xl font-bold mb-1 leading-none", // Increased font size
+                "text-4xl lg:text-6xl font-bold mb-1 leading-none font-numbers", // Increased size + Roboto Mono
                 isDark ? "text-green-400" : "text-green-600"
               )}>
                 {Math.round(accuracy)}%
               </div>
               <div className={cn(
-                "text-sm lg:text-base font-medium tracking-wider uppercase", // Increased font size
+                "text-base lg:text-lg font-medium tracking-wider uppercase font-numbers", // Increased label size
                 isDark ? "text-gray-300" : "text-gray-700"
               )}>
                 acc
@@ -277,20 +304,38 @@ const TestResults = ({
                         type="number"
                         scale="linear"
                       />
+                      {/* Left Y-Axis for WPM/Raw WPM */}
                       <YAxis 
+                        yAxisId="wpm"
                         axisLine={false}
                         tickLine={false}
                         tick={{ fill: isDark ? "#9ca3af" : "#6b7280", fontSize: 11 }}
                         tickMargin={8}
                         domain={[0, 'dataMax + 10']}
                         tickCount={4}
+                        label={{ value: 'WPM/RAW', angle: -90, position: 'insideLeft', textAnchor: 'middle', style: { fill: isDark ? "#9ca3af" : "#6b7280", fontSize: 10 } }}
                       />
+                      
+                      {/* Right Y-Axis for Errors */}
+                      <YAxis 
+                        yAxisId="errors"
+                        orientation="right"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: isDark ? "#ef4444" : "#dc2626", fontSize: 11 }}
+                        tickMargin={8}
+                        domain={[0, Math.max(4, Math.ceil((errorHistory.length > 0 ? Math.max(...errorHistory) : errors) * 1.2))]}
+                        tickCount={4}
+                        label={{ value: 'ERRORS', angle: 90, position: 'insideRight', textAnchor: 'middle', style: { fill: isDark ? "#ef4444" : "#dc2626", fontSize: 10 } }}
+                      />
+                      
                       <Tooltip content={<CustomTooltip />} />
                       
                       {/* WPM Area with colored fill */}
                       <Area
                         type="monotone"
                         dataKey="wpm"
+                        yAxisId="wpm"
                         stroke={isDark ? "#fbbf24" : "#f59e0b"}
                         strokeWidth={2}
                         fill="url(#wpmGradient)"
@@ -303,6 +348,7 @@ const TestResults = ({
                       <Area
                         type="monotone"
                         dataKey="rawWpm"
+                        yAxisId="wpm"
                         stroke={isDark ? "#8b5cf6" : "#7c3aed"}
                         strokeWidth={4}
                         strokeDasharray="5 3"
@@ -312,23 +358,24 @@ const TestResults = ({
                         connectNulls={false}
                       />
                       
-                      {/* Error dots - red dots for mistakes */}
+                      {/* Error line - red line on right Y-axis */}
                       <Area
                         type="monotone"
-                        dataKey="hasError"
-                        stroke="transparent"
-                        strokeWidth={0}
+                        dataKey="errors"
+                        yAxisId="errors"
+                        stroke={isDark ? "#ef4444" : "#dc2626"}
+                        strokeWidth={3}
                         fill="transparent"
                         dot={(props: any) => {
                           if (props.payload && props.payload.hasError) {
                             return (
                               <circle
                                 cx={props.cx}
-                                cy={props.cy - 10} // Position above the line
-                                r={3}
+                                cy={props.cy}
+                                r={4}
                                 fill={isDark ? "#ef4444" : "#dc2626"}
                                 stroke={isDark ? "#1f2937" : "#ffffff"}
-                                strokeWidth={1}
+                                strokeWidth={2}
                               />
                             );
                           }
