@@ -251,7 +251,12 @@ export function MainNav() {
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard"
-                        className={`dark:text-slate-300 cursor-pointer font-medium hover:text-slate-300`}
+                        className={cn(
+                          "cursor-pointer font-medium",
+                          isDark
+                            ? "text-slate-300 hover:text-white"
+                            : "text-slate-700 hover:text-slate-900"
+                        )}
                       >
                         Improvement Dashboard
                       </Link>
@@ -259,7 +264,12 @@ export function MainNav() {
                     <DropdownMenuItem asChild>
                       <Link
                         href="/profile"
-                        className={`dark:text-slate-300 cursor-pointer font-medium hover:text-slate-300`}
+                        className={cn(
+                          "cursor-pointer font-medium",
+                          isDark
+                            ? "text-slate-300 hover:text-white"
+                            : "text-slate-700 hover:text-slate-900"
+                        )}
                       >
                         Profile & Stats
                       </Link>
@@ -284,7 +294,7 @@ export function MainNav() {
                     className={`h-8 ${
                       isDark
                         ? "text-slate-50 hover:text-slate-100 bg-slate-800 border-slate-700 hover:bg-slate-700"
-                        : "bg-white border-slate-200 hover:bg-slate-100"
+                        : "bg-white text-slate-300 border-slate-200 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     <Link href="/login">Sign In</Link>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,10 @@ export default function TypingDashboard() {
   const [practiceTexts, setPracticeTexts] = useState<PracticeText[]>([]);
   const [generatingText, setGeneratingText] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const { theme } = useTheme();
   const router = useRouter();
+
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     fetchCharacterData();
@@ -122,10 +126,10 @@ export default function TypingDashboard() {
   const sortedCharacterData = [...characterData].sort((a, b) => b.weakness_score - a.weakness_score);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className={`container mx-auto px-4 py-8 ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Complete Character Improvement System</h1>
-        <p className="text-lg text-muted-foreground">
+        <h1 className={`text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Complete Character Improvement System</h1>
+        <p className={`text-lg ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
           Track character mistakes and practice with specialized texts designed to maximize specific letter usage
         </p>
       </div>
@@ -227,7 +231,9 @@ export default function TypingDashboard() {
                         </div>
                         
                         {/* Tooltip */}
-                        <div className="invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-black text-white text-xs rounded whitespace-nowrap z-10">
+                        <div className={`invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 text-xs rounded whitespace-nowrap z-10 ${
+                          isDark ? 'bg-slate-800 text-slate-200 border border-slate-600' : 'bg-white text-slate-800 border border-slate-300 shadow-lg'
+                        }`}>
                           Accuracy: {char.accuracy.toFixed(1)}%<br/>
                           Speed: {char.average_speed.toFixed(1)} CPM<br/>
                           Mistakes: {char.mistakes_count}
@@ -384,7 +390,9 @@ export default function TypingDashboard() {
                         )}
                         
                         {/* Tooltip */}
-                        <div className="invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-black text-white text-xs rounded whitespace-nowrap z-10">
+                        <div className={`invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 text-xs rounded whitespace-nowrap z-10 ${
+                          isDark ? 'bg-slate-800 text-slate-200 border border-slate-600' : 'bg-white text-slate-800 border border-slate-300 shadow-lg'
+                        }`}>
                           {charData ? (
                             <>
                               Accuracy: {charData.accuracy.toFixed(1)}%<br/>
@@ -410,7 +418,7 @@ export default function TypingDashboard() {
                         practiceCharacter(randomChar, 'easy');
                       }}
                       disabled={generatingText}
-                      className="bg-green-50 hover:bg-green-100"
+                      className="bg-green-50 text-slate-800 hover:text-slate-900 hover:bg-green-100"
                     >
                       🟢 Easy Mode (Random Letter)
                     </Button>
@@ -421,7 +429,7 @@ export default function TypingDashboard() {
                         practiceCharacter(randomChar, 'medium');
                       }}
                       disabled={generatingText}
-                      className="bg-yellow-50 hover:bg-yellow-100"
+                      className="bg-yellow-50 text-slate-800 hover:text-slate-900 hover:bg-yellow-100"
                     >
                       🟡 Medium Mode (Random Letter)
                     </Button>
@@ -432,7 +440,7 @@ export default function TypingDashboard() {
                         practiceCharacter(randomChar, 'hard');
                       }}
                       disabled={generatingText}
-                      className="bg-red-50 hover:bg-red-100"
+                      className="bg-red-50 text-slate-800 hover:text-slate-900 hover:bg-red-100"
                     >
                       🔴 Hard Mode (Random Letter)
                     </Button>

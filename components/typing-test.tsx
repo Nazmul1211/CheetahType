@@ -635,7 +635,7 @@ export function TypingTest({
             </div>
           </div>
         ) : (
-          <span className="text-4xl font-bold align-middle text-slate-400"></span>
+          <span className={cn("text-4xl font-bold align-middle", isDark ? "text-slate-400" : "text-slate-600")}></span>
         )}
       </div>
 
@@ -734,16 +734,16 @@ export function TypingTest({
         )}>
           <div className="flex items-center text-sm">
             <kbd className={cn("px-2 py-0.5 rounded mx-1", isDark ? "bg-slate-700" : "bg-slate-300")}>shift</kbd>
-            <span className="mx-1 text-slate-400">+</span>
+            <span className={cn("mx-1", isDark ? "text-slate-400" : "text-slate-600")}>+</span>
             <kbd className={cn("px-2 py-0.5 rounded mx-1", isDark ? "bg-slate-700" : "bg-slate-300")}>tab</kbd>
-            <span className="mx-2 text-slate-400">-</span>
-            <span className="text-sm text-slate-400">restart test</span>
+            <span className={cn("mx-2", isDark ? "text-slate-400" : "text-slate-600")}>-</span>
+            <span className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-600")}>restart test</span>
           </div>
           
           <div className="flex items-center text-sm">
             <kbd className={cn("px-2 py-0.5 rounded mx-1", isDark ? "bg-slate-700" : "bg-slate-300")}>esc</kbd>
-            <span className="mx-2 text-slate-400">-</span>
-            <span className="text-sm text-slate-400">command line</span>
+            <span className={cn("mx-2", isDark ? "text-slate-400" : "text-slate-600")}>-</span>
+            <span className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-600")}>command line</span>
           </div>
         </div>
 

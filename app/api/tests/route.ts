@@ -128,14 +128,14 @@ export async function POST(request: Request) {
       text_content: text_content || null,
       wpm: Math.round(wpm), // Convert to INTEGER as expected by database
       raw_wpm: raw_wpm ? Math.round(raw_wpm) : Math.round(wpm * 1.1), // Convert to INTEGER
-      accuracy: Math.min(1, Math.max(0, Number(accuracy.toFixed(4)))), // Keep as decimal (0-1) for DECIMAL(5,4) constraint
-      consistency: consistency ? Math.min(1, Math.max(0, Number(consistency.toFixed(4)))) : null, // Keep as decimal (0-1) for DECIMAL(5,4) constraint
+      accuracy: Math.min(1, Math.max(0, Number(accuracy.toFixed(4)))), // Keep as decimal (0-1) with precision
+      consistency: consistency ? Math.min(1, Math.max(0, Number(consistency.toFixed(4)))) : null, // Keep as decimal (0-1) with precision
       total_characters: calculatedTotalChars,
       correct_characters: calculatedCorrectChars,
       incorrect_characters: calculatedIncorrectChars,
-      total_words: calculatedTotalWords, // Required field - include it
-      correct_words: calculatedCorrectWords, // Required field - include it  
-      incorrect_words: calculatedIncorrectWords, // Required field - include it
+      total_words: calculatedTotalWords, // Add the required word fields
+      correct_words: calculatedCorrectWords,
+      incorrect_words: calculatedIncorrectWords,
       actual_duration: Math.round(actual_duration),
       language: language || 'english'
     };

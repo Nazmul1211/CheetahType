@@ -84,7 +84,7 @@ export default function MultiplayerPage() {
             </CardHeader>
             <CardContent>
               <div className="p-4 rounded-md mb-4 bg-teal-900/20 border border-teal-800/50">
-                <p className="text-sm text-teal-300">
+                <p className="text-sm text-teal-500">
                   <Rocket className="h-4 w-4 inline-block mr-2" />
                   Coming soon! Multiplayer races are currently under development.
                 </p>

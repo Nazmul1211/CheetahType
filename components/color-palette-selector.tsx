@@ -97,7 +97,7 @@ export function ColorPaletteSelector() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button 
-        className={`${isDarkMode ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-950 hover:text-white'} flex items-center gap-2 px-3 py-1.5 rounded-md flex items-center gap-2 px-3 py-1.5 rounded-md  border border-slate-700/50 hover:bg-slate-800`}
+        className={`${isDarkMode ? 'bg-slate-900 text-slate-300 border-slate-700/50 hover:bg-slate-800' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:text-slate-900'} flex items-center gap-2 px-3 py-1.5 rounded-md border`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex w-6 h-6 rounded-full overflow-hidden border border-slate-600">
@@ -110,24 +110,26 @@ export function ColorPaletteSelector() {
       </button>
       
       {isOpen && (
-        <div className="absolute top-full mt-2 right-0 z-50 bg-slate-800 border border-slate-700 rounded-md shadow-lg py-2 w-52">
-          <p className={`${isDarkMode ? 'text-slate-50' : 'text-slate-50'} text-sm px-3 py-1 text-xs uppercase font-medium tracking-wider`}>Color Theme</p>
+        <div className={`absolute top-full mt-2 right-0 z-50 border rounded-md shadow-lg py-2 w-52 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <p className={`${isDarkMode ? 'text-slate-300' : 'text-slate-600'} text-xs px-3 py-1 uppercase font-medium tracking-wider`}>Color Theme</p>
           
           <div className="mt-1">
             {colorPalettes.map(palette => (
               <button
                 key={palette.id}
                 onClick={() => handlePaletteChange(palette.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-700 text-left ${
-                  activePalette === palette.id ? 'bg-slate-700/50' : ''
+                className={`w-full flex items-center gap-3 px-3 py-2 text-left ${
+                  isDarkMode 
+                    ? `hover:bg-slate-700 ${activePalette === palette.id ? 'bg-slate-700/50' : ''}` 
+                    : `hover:bg-slate-100 ${activePalette === palette.id ? 'bg-slate-100' : ''}`
                 }`}
               >
-                <div className="flex w-5 h-5 rounded-full overflow-hidden border border-slate-600">
+                <div className={`flex w-5 h-5 rounded-full overflow-hidden border ${isDarkMode ? 'border-slate-600' : 'border-slate-300'}`}>
                   <div className="flex-1" style={{ backgroundColor: isDarkMode ? palette.colors.dark[0] : palette.colors.light[0] }}></div>
                   <div className="flex-1" style={{ backgroundColor: isDarkMode ? palette.colors.dark[1] : palette.colors.light[1] }}></div>
                   <div className="flex-1" style={{ backgroundColor: isDarkMode ? palette.colors.dark[2] : palette.colors.light[2] }}></div>
                 </div>
-                <span className={`${isDarkMode ? 'text-slate-50' : 'text-slate-50'} text-sm`}>{palette.name}</span>
+                <span className={`${isDarkMode ? 'text-slate-200' : 'text-slate-700'} text-sm`}>{palette.name}</span>
               </button>
             ))}
           </div>

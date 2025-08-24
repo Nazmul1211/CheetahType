@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import { getAuth } from "firebase/auth";
 import { supabaseClient } from '@/utils/supabase/client';
+import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ const TestResults = ({
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const { user } = useAuth();
 
   // Calculate correct characters and CPM
   const correctChars = Math.max(0, characters - errors);
@@ -201,17 +203,92 @@ const TestResults = ({
   const saveResult = async () => {
     if (saveStatus === 'saving' || saveStatus === 'saved') return;
     
+    // Check if user is authenticated
+    if (!user || !user.email) {
+      toast({ 
+        title: "Authentication required", 
+        description: "Please sign in to save your test results.", 
+        variant: "destructive" 
+      });
+      router.push('/login');
+      return;
+    }
+
+    // Validate test data
+    if (!wpm || wpm <= 0 || !accuracy || accuracy < 0 || !duration || duration <= 0) {
+      toast({ 
+        title: "Invalid test data", 
+        description: "Test results appear to be incomplete. Please take a new test.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     setSaveStatus('saving');
     try {
-      // Simulate save functionality
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Calculate correct characters
+      const correctChars = Math.max(0, characters - errors);
+      
+      // Prepare the data for the API
+      const testData = {
+        firebase_uid: user.id,
+        user_email: user.email,
+        wpm: Math.round(wpm),
+        raw_wpm: rawWpm ? Math.round(rawWpm) : Math.round(wpm * 1.2), // Estimate if not provided
+        accuracy: accuracy / 100, // Convert percentage (0-100) to decimal (0-1) preserving precision
+        consistency: consistency ? consistency / 100 : null, // Convert percentage to decimal
+        total_characters: characters,
+        correct_characters: correctChars,
+        incorrect_characters: errors,
+        total_words: Math.round(characters / 5), // Calculate total words (standard 5 chars per word)
+        correct_words: Math.round(correctChars / 5), // Calculate correct words
+        incorrect_words: Math.round(errors / 5), // Calculate incorrect words
+        actual_duration: duration,
+        test_mode: testMode,
+        time_limit: testMode === 'time' ? timeSeconds : null,
+        word_limit: testMode === 'words' ? Math.round(characters / 5) : null,
+        language: 'english',
+        text_content: textContent || null,
+      };
+
+      console.log('Saving test data:', testData);
+
+      const response = await fetch('/api/tests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          // Duplicate test
+          toast({ 
+            title: "Duplicate test detected", 
+            description: "This test result was already saved. Please wait before saving again.", 
+            variant: "destructive" 
+          });
+          setSaveStatus('failed');
+          return;
+        }
+        throw new Error(result.error || 'Failed to save test result');
+      }
+
       setSaveStatus('saved');
-      toast({ title: "Result Saved", description: "Your test result has been saved." });
+      toast({ 
+        title: "Result Saved Successfully! 🎉", 
+        description: `Your typing test result (${wpm} WPM, ${Math.round(accuracy)}% accuracy) has been saved to your profile.` 
+      });
+
     } catch (err: any) {
+      console.error('Error saving test result:', err);
       setSaveStatus('failed');
       toast({ 
         title: "Save failed", 
-        description: err.message || 'Could not save result.', 
+        description: err.message || 'Could not save result. Please try again.', 
         variant: "destructive" 
       });
     }
@@ -470,7 +547,12 @@ const TestResults = ({
           variant="outline" 
           size="lg" 
           disabled={saveStatus === 'saving' || saveStatus === 'saved'}
-          className="min-w-32"
+          className={cn(
+            "min-w-32",
+            isDark 
+              ? "border-slate-600 text-slate-300 bg-slate-900 hover:bg-slate-700 hover:text-slate-100" 
+              : "border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          )}
         >
           {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Save Result'}
         </Button>

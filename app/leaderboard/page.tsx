@@ -107,10 +107,10 @@ export default function LeaderboardPage() {
       
       <Tabs defaultValue="30" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 bg-gray-100 dark:bg-gray-700">
-          <TabsTrigger value="15" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-primary-foreground">15s</TabsTrigger>
-          <TabsTrigger value="30" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-primary-foreground">30s</TabsTrigger>
-          <TabsTrigger value="60" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-primary-foreground">60s</TabsTrigger>
-          <TabsTrigger value="120" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-primary-foreground">120s</TabsTrigger>
+          <TabsTrigger value="15" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-secondary-foreground">15s</TabsTrigger>
+          <TabsTrigger value="30" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-secondary-foreground">30s</TabsTrigger>
+          <TabsTrigger value="60" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-secondary-foreground">60s</TabsTrigger>
+          <TabsTrigger value="120" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary dark:data-[state=active]:text-secondary-foreground">120s</TabsTrigger>
         </TabsList>
         
         {["15", "30", "60", "120"].map((mode) => (
@@ -176,14 +176,14 @@ export default function LeaderboardPage() {
                               <span className={`font-bold text-lg ${entry.rank === 1 ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'}`}>
                                 {Math.round(entry.wpm)}
                               </span>
-                              <span className="text-sm text-gray-500 ml-1">WPM</span>
+                              <span className={`text-sm ml-1 ${theme === "dark" ? 'text-gray-400' : 'text-gray-600'}`}>WPM</span>
                             </td>
                             <td className="py-3 px-4 text-right">
                               <span className={`font-semibold ${entry.rank === 1 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>
                                 {entry.accuracy.toFixed(1)}%
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right text-sm text-gray-500">
+                            <td className={`py-3 px-4 text-right text-sm ${theme === "dark" ? 'text-gray-400' : 'text-gray-600'}`}>
                               {new Date(entry.created_at).toLocaleDateString()}
                             </td>
                           </tr>

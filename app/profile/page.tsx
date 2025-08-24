@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Square, Underline, BoxSelect, Type, TrendingUp, Trophy, Target, Clock } from 'lucide-react';
 import { useUserSettings } from "@/lib/user-settings";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   name: string;
@@ -63,6 +64,7 @@ export default function ProfilePage() {
   const [latestTest, setLatestTest] = useState<TestResult | null>(null);
   const router = useRouter();
   const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { toast } = useToast();
   const { deleteAccount } = useAuth();
   const { settings, updateSettings, resetSettings } = useUserSettings();
@@ -283,8 +285,8 @@ export default function ProfilePage() {
   
   if (isLoading) {
     return (
-      <div className="container max-w-7xl mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Profile</h1>
+      <div className={`container max-w-7xl mx-auto p-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <h1 className={`text-3xl font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Profile</h1>
         <div className="grid gap-4">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-32 w-full" />
@@ -296,8 +298,8 @@ export default function ProfilePage() {
   
   if (error || !profile) {
     return (
-      <div className="container max-w-7xl mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Profile</h1>
+      <div className={`container max-w-7xl mx-auto p-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <h1 className={`text-3xl font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Profile</h1>
         <Card>
           <CardHeader>
             <CardTitle>Error</CardTitle>
@@ -311,7 +313,6 @@ export default function ProfilePage() {
   }
   
   // Helper function for styling based on theme
-  const isDark = theme === 'dark';
   const getCardClass = () => isDark ? 'bg-zinc-900' : 'bg-card';
   const getInnerCardClass = () => isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-card';
   const getTextClass = () => isDark ? 'text-white' : '';
@@ -625,7 +626,7 @@ export default function ProfilePage() {
   
   return (
     <div className="container max-w-7xl mx-auto p-4">
-      <h1 className={`text-3xl font-bold mb-6 ${getTextClass()}`}>Profile</h1>
+      <h1 className={`text-3xl text-slate-700 font-bold mb-6 ${getTextClass()}`}>Profile</h1>
       
       <div className="mb-6">
         <Card className={getCardClass()}>
@@ -717,6 +718,11 @@ export default function ProfilePage() {
                 <Button 
                   onClick={handleProfileUpdate} 
                   disabled={isUpdating}
+                  className={cn(
+                    isDark 
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  )}
                 >
                   {isUpdating ? "Updating..." : "Update Profile"}
                 </Button>
@@ -768,6 +774,11 @@ export default function ProfilePage() {
                 <Button 
                   onClick={handlePasswordUpdate} 
                   disabled={isUpdating || !newPassword || newPassword !== confirmPassword}
+                  className={cn(
+                    isDark 
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  )}
                 >
                   {isUpdating ? "Updating..." : "Update Password"}
                 </Button>
