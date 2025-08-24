@@ -10,7 +10,7 @@ interface WordDisplayProps {
   userInput: string;
   fontFamily?: "mono" | "sans" | "serif";
   fontSize?: "small" | "medium" | "large";
-  caretStyle?: "block" | "underline" | "outline" | "straight";
+  caretStyle?: "block" | "underline" | "outline" | "straight" | "cursor";
   caretBlink?: boolean;
   maxLines?: number;
 }
@@ -122,19 +122,21 @@ export function WordDisplay({
     return () => window.removeEventListener("resize", calculateTextRange);
   }, [text, userInput, maxLines]);
 
-  // Get caret style class based on the selected caret style
+  // Get caret style class based on the selected caret style - minimalistic without transitions
   const getCaretStyleClass = () => {
     switch (caretStyle) {
       case "block":
-        return "bg-teal-500/70";
+        return `bg-teal-500/70`;
       case "underline":
-        return "border-b-2 border-primary";
+        return `border-b-2 border-teal-500`;
       case "outline":
-        return "border border-primary";
+        return `border border-teal-500 bg-teal-500/10`;
       case "straight":
-        return "border-l-2 border-primary";
+        return `border-l-2 border-teal-500`;
+      case "cursor":
+        return `border-l-[2px] border-teal-400`;
       default:
-        return "bg-primary/80";
+        return `border-l-[2px] border-teal-400`;
     }
   };
 
@@ -211,21 +213,33 @@ export function WordDisplay({
               const adjustedIndex = index - visibleTextRange.start;
               const inputIndex = index;
 
-              let className = "opacity-70"; // Default style without transition
+              let className = "opacity-70"; // Default style - no transitions to prevent text vibration
 
               if (index < userInput.length) {
-                // User has typed this character
+                // User has typed this character - no transitions for stability
                 className =
                   userInput[index] === char
-                    ? `text-${isDark ? "white" : "black"}-500 opacity-100` // Correct
-                    : "text-red-500 opacity-100 border-b border-red-500"; // Incorrect
+                    ? `${isDark ? "text-slate-100" : "text-slate-900"} opacity-100` // Correct
+                    : "text-red-500 opacity-100 bg-red-500/10"; // Incorrect - removed underline
               } else if (index === userInput.length) {
-                // Current character to type
-                className = cn(caretStyleClass, caretBlinkClass, "opacity-100");
+                // Current character - minimalistic cursor without background effects
+                className = cn(
+                  caretStyleClass, 
+                  caretBlinkClass, 
+                  "opacity-100",
+                  isDark ? "text-slate-300" : "text-slate-700" // Subtle text color, no blocking
+                );
               }
 
               return (
-                <span key={index} className={cn(className)}>
+                <span 
+                  key={index} 
+                  className={cn(className)}
+                  style={{
+                    display: 'inline',
+                    letterSpacing: 'inherit'
+                  }}
+                >
                   {char}
                 </span>
               );

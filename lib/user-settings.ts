@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   timeOption: 30,
   wordsOption: 25,
   showKeyboard: true,
-  caretStyle: 'block',
+  caretStyle: 'cursor',
   caretBlink: true,
   fontFamily: 'mono',
   fontSize: 'medium',

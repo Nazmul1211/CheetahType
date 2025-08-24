@@ -10,17 +10,24 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
-// Import Recharts components with require for compatibility
-const { 
-  AreaChart, 
-  Area,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+// Import Recharts components with type assertions
+const {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  ReferenceDot
-} = require('recharts');
+  Area,
+  AreaChart,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} = require('recharts') as any;
 
 interface TestResultsProps {
   wpm: number;
@@ -39,7 +46,7 @@ interface TestResultsProps {
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
 
-const TestResults = ({
+export default function TestResults({
   wpm,
   rawWpm,
   accuracy,
@@ -52,7 +59,7 @@ const TestResults = ({
   timeSeconds,
   wpmHistory = [],
   onRestart
-}: TestResultsProps) => {
+}: TestResultsProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const { toast } = useToast();
   const router = useRouter();
@@ -205,13 +212,13 @@ const TestResults = ({
             {/* WPM */}
             <div className="text-center">
               <div className={cn(
-                "text-3xl lg:text-5xl font-bold mb-1 leading-none", // Increased font size
+                "text-2xl lg:text-4xl font-bold mb-1 leading-none", // Made smaller for perfect proportion
                 isDark ? "text-yellow-400" : "text-amber-600"
               )}>
                 {wpm}
               </div>
               <div className={cn(
-                "text-sm lg:text-base font-medium tracking-wider uppercase", // Increased font size
+                "text-xs lg:text-sm font-medium tracking-wider uppercase",
                 isDark ? "text-gray-300" : "text-gray-700"
               )}>
                 wpm
@@ -221,13 +228,13 @@ const TestResults = ({
             {/* Accuracy */}
             <div className="text-center">
               <div className={cn(
-                "text-3xl lg:text-5xl font-bold mb-1 leading-none", // Increased font size
+                "text-2xl lg:text-4xl font-bold mb-1 leading-none", // Made smaller for perfect proportion
                 isDark ? "text-green-400" : "text-green-600"
               )}>
                 {Math.round(accuracy)}%
               </div>
               <div className={cn(
-                "text-sm lg:text-base font-medium tracking-wider uppercase", // Increased font size
+                "text-xs lg:text-sm font-medium tracking-wider uppercase",
                 isDark ? "text-gray-300" : "text-gray-700"
               )}>
                 acc
@@ -246,18 +253,7 @@ const TestResults = ({
               <CardContent className="p-4 h-full">
                 <div style={{ width: '100%', height: '20vh', minHeight: '160px' }}>
                   <ResponsiveContainer>
-                    <AreaChart data={detailedChartData} margin={{ top: 20, right: 40, left: 20, bottom: 40 }}>
-                      <defs>
-                        <linearGradient id="wpmGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={isDark ? "#fbbf24" : "#f59e0b"} stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor={isDark ? "#fbbf24" : "#f59e0b"} stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="rawGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={isDark ? "#8b5cf6" : "#7c3aed"} stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor={isDark ? "#8b5cf6" : "#7c3aed"} stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      
+                    <LineChart data={detailedChartData} margin={{ top: 20, right: 40, left: 20, bottom: 40 }}>
                       {/* Excel-style grid */}
                       <CartesianGrid 
                         strokeDasharray="0" 
@@ -287,38 +283,35 @@ const TestResults = ({
                       />
                       <Tooltip content={<CustomTooltip />} />
                       
-                      {/* WPM Area with colored fill */}
-                      <Area
-                        type="monotone"
-                        dataKey="wpm"
-                        stroke={isDark ? "#fbbf24" : "#f59e0b"}
-                        strokeWidth={2}
-                        fill="url(#wpmGradient)"
-                        dot={false}
-                        activeDot={{ r: 4, fill: isDark ? "#fbbf24" : "#f59e0b", stroke: isDark ? "#1f2937" : "#ffffff", strokeWidth: 2 }}
-                        connectNulls={false}
-                      />
-                      
-                      {/* Raw WPM Area with colored fill (thicker, more prominent) */}
-                      <Area
+                      {/* Raw WPM Line (thicker, more prominent) */}
+                      <Line
                         type="monotone"
                         dataKey="rawWpm"
                         stroke={isDark ? "#8b5cf6" : "#7c3aed"}
-                        strokeWidth={4}
+                        strokeWidth={4} // Made much thicker for better visibility
                         strokeDasharray="5 3"
-                        fill="url(#rawGradient)"
                         dot={false}
                         activeDot={{ r: 5, fill: isDark ? "#8b5cf6" : "#7c3aed", stroke: isDark ? "#1f2937" : "#ffffff", strokeWidth: 2 }}
                         connectNulls={false}
                       />
                       
+                      {/* WPM Line (thinner than raw) */}
+                      <Line
+                        type="monotone"
+                        dataKey="wpm"
+                        stroke={isDark ? "#fbbf24" : "#f59e0b"}
+                        strokeWidth={2} // Thinner than raw for contrast
+                        dot={false}
+                        activeDot={{ r: 4, fill: isDark ? "#fbbf24" : "#f59e0b", stroke: isDark ? "#1f2937" : "#ffffff", strokeWidth: 2 }}
+                        connectNulls={false}
+                      />
+                      
                       {/* Error dots - red dots for mistakes */}
-                      <Area
+                      <Line
                         type="monotone"
                         dataKey="hasError"
                         stroke="transparent"
                         strokeWidth={0}
-                        fill="transparent"
                         dot={(props: any) => {
                           if (props.payload && props.payload.hasError) {
                             return (
@@ -336,7 +329,7 @@ const TestResults = ({
                         }}
                         connectNulls={false}
                       />
-                    </AreaChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
                 
@@ -345,10 +338,10 @@ const TestResults = ({
                   {/* Raw WPM */}
                   <div className="text-center">
                     <div className={cn("text-lg font-semibold", isDark ? "text-purple-400" : "text-purple-600")}>
-                      {Math.round(rawWpm || Math.round(wpm * 1.2))}
+                      {rawWpm || Math.round(wpm * 1.2)}
                     </div>
                     <div className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-gray-400" : "text-gray-500")}>
-                      raw
+                      raw wpm
                     </div>
                   </div>
                   
@@ -408,7 +401,7 @@ const TestResults = ({
             "text-sm font-medium",
             isDark ? "text-gray-400" : "text-gray-600"
           )}>
-            Ads
+            728 x 90 Advertisement Space
           </span>
         </div>
       </div>
@@ -431,7 +424,3 @@ const TestResults = ({
     </div>
   );
 } 
-
-// Named export for compatibility
-export { TestResults };
-export default TestResults;

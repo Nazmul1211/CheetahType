@@ -45,7 +45,7 @@ interface TypingTestProps {
   showKeyboard?: boolean;
   fontFamily?: "mono" | "sans" | "serif";
   fontSize?: "small" | "medium" | "large";
-  caretStyle?: "block" | "underline" | "outline" | "straight";
+  caretStyle?: "block" | "underline" | "outline" | "straight" | "cursor";
   caretBlink?: boolean;
   soundEnabled?: boolean;
   customText?: string;
@@ -58,7 +58,7 @@ export function TypingTest({
   showKeyboard = true,
   fontFamily = "mono",
   fontSize = "medium",
-  caretStyle = "block",
+  caretStyle = "cursor",
   caretBlink = false,
   soundEnabled = false,
   customText,
@@ -230,9 +230,10 @@ export function TypingTest({
       .split("")
       .filter((char, i) => char !== text[i]).length;
     const totalChars = userInput.length;
-    // For timed tests, use the exact time option if test completed normally
-    // For other modes or incomplete tests, use actual elapsed time
-    const timeInSeconds = (testMode === 'time') ? timeOption : (elapsedTime > 0 ? elapsedTime : 1);
+    
+    // Always use actual elapsed time for accurate WPM calculation
+    const actualElapsedTime = Math.max(elapsedTime, 1); // Ensure at least 1 second to avoid division by zero
+    const timeInSeconds = actualElapsedTime;
 
     // Find positions where errors occurred
     const errors: number[] = [];
@@ -302,22 +303,23 @@ export function TypingTest({
       timerRef.current = setInterval(() => {
         const currentTime = Date.now();
         const start = startTime || now;
-        const newElapsedTime = Math.floor((currentTime - start) / 1000);
+        const exactElapsedTime = (currentTime - start) / 1000; // Keep decimal precision
+        const newElapsedTime = Math.floor(exactElapsedTime);
         const newRemainingTime = Math.max(0, timeOption - newElapsedTime);
 
         setElapsedTime(newElapsedTime);
         setRemainingTime(newRemainingTime);
 
-        console.log(`Timer update: ${newRemainingTime}s remaining`);
+        console.log(`Timer update: ${newRemainingTime}s remaining, exact: ${exactElapsedTime.toFixed(1)}s`);
 
-        // For all modes: end test when time runs out (allow exactly timeOption seconds)
-        if (newRemainingTime === 0) {
-          console.log("Timer reached target time, ending test");
+        // For all modes: end test when exact time is reached (not rounded)
+        if (exactElapsedTime >= timeOption) {
+          console.log(`Timer reached target time (${exactElapsedTime.toFixed(1)}s >= ${timeOption}s), ending test`);
           // Set the final elapsed time to exactly the time option for accurate display
           setElapsedTime(timeOption);
           if (endTestRef.current) endTestRef.current();
         }
-      }, 1000);
+      }, 100); // More frequent updates for precise timing
 
       wpmIntervalRef.current = setInterval(
         calculateCurrentWPM,
@@ -697,6 +699,7 @@ export function TypingTest({
               testMode={testMode}
               timeSeconds={testMode === 'time' ? timeOption : undefined}
               textContent={text.substring(0, userInput.length)}
+              wpmHistory={stats.wpmHistory}
               onRestart={restartTest}
             />
           </div>
